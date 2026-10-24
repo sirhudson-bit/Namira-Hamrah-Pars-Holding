@@ -31,30 +31,25 @@ It pulls `main`, backs up SQLite to `prisma/backups/`, syncs the schema, rebuild
 and restarts pm2 (single instance — a short restart, not zero-downtime). It
 refuses a destructive `prisma db push` so data isn't silently dropped.
 
-## TLS — blocked until DNS is fixed
+## TLS and DNS — live
 
-`namirahamrah.ir` is registered, but its delegated nameservers do not answer:
+Let's Encrypt certificate for `namirahamrah.ir` + `www` (certbot, `--nginx`,
+auto-renew via `certbot.timer`). HTTPS only: `http://` → `301` → `https://`,
+and `www` → `301` → apex, so the canonical host matches `NEXT_PUBLIC_SITE_URL`
+and the sitemap.
 
-```
-EDE(22): No Reachable Authority at delegation namirahamrah.ir
-```
-
-Fix the NS records at the registrar (point them at your DNS host), then add:
+Zone lives at the hosting's nameservers (`dns1`/`dns2.mizbanfadns.net`):
 
 | Type | Name | Value |
 | --- | --- | --- |
 | A | `@` | `194.56.148.100` |
 | A | `www` | `194.56.148.100` |
 
-Once `dig +short namirahamrah.ir` returns the server IP:
+No other A record for `@` may exist — a parking record pointing at the shared
+hosting IP silently sends half the visitors to a 404.
 
-```bash
-sudo apt-get install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d namirahamrah.ir -d www.namirahamrah.ir
-```
-
-Until then the site answers by Host header only:
-`curl -H 'Host: namirahamrah.ir' http://127.0.0.1:3001/`
+If TLS ever has to be re-issued: `bash deploy/namira-https.sh` on the box, or
+`certbot --nginx -d namirahamrah.ir -d www.namirahamrah.ir` by hand.
 
 ## Operational facts
 
