@@ -16,7 +16,9 @@ module.exports = {
       // Call next directly instead of going through `npm start`, so pm2 can
       // signal the real Node process and reload without an orphan `npm` parent.
       script: `${appDir}/node_modules/next/dist/bin/next`,
-      args: `start --port ${port}`,
+      // Bind to loopback: nginx is the only public entry point, so the Node port
+      // must not answer on the public interface.
+      args: `start --port ${port} --hostname 127.0.0.1`,
       instances: 1,
       exec_mode: "fork",
       autorestart: true,
