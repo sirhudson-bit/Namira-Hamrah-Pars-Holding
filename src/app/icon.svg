@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="نامیرا همراه پارس">
+  <rect width="64" height="64" rx="16" fill="#0F7C71"/>
+  <path d="M17 43V23.5c0-.48.58-.72.91-.38L32 35.5l14.09-12.38c.33-.34.91-.1.91.38V43" fill="none" stroke="#DCF2EF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="32" cy="19" r="3.8" fill="#6FD8CB"/>
+</svg>

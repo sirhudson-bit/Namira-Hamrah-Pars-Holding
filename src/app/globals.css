@@ -1,0 +1,451 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------ */
+/* Vazirmatn — self-hosted (public/fonts), so the site needs no CDN.   */
+/* ------------------------------------------------------------------ */
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-ExtraBold.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Themes. Tokens are stored as `R G B` triplets so Tailwind can apply  */
+/* opacity modifiers; `line-200` and the canvas colours are full values */
+/* because they are always used opaque. Switching the `data-theme`      */
+/* attribute on <html> re-skins everything.                             */
+/* ------------------------------------------------------------------ */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --surface-50: 11 15 14; /* page canvas */
+  --surface: 18 26 24; /* raised panel */
+  --surface-100: 22 33 30; /* tile */
+  --surface-200: 27 42 38; /* chip */
+
+  --ink-900: 234 242 239;
+  --ink-700: 195 212 206;
+  --ink-500: 140 163 157;
+  --ink-400: 110 133 128;
+
+  --accent: 127 184 170;
+  --accent-strong: 169 220 207;
+
+  --line-200: rgba(255, 255, 255, 0.09);
+  --page-glow: rgba(127, 184, 170, 0.035);
+  --glow: rgba(127, 184, 170, 0.18);
+
+  /* Kinetic-grid palette (see components/ui/kinetic-grid.tsx) */
+  --kg-bg: #0b0f0e;
+  --kg-base: 255 255 255;
+  --kg-dot: 255 255 255;
+  --kg-line: 127 184 170;
+  --kg-node: 169 220 207;
+  --kg-glow: 127 184 170;
+  --kg-ripple: 169 220 207;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-50: 247 249 251;
+  --surface: 255 255 255;
+  --surface-100: 255 255 255;
+  --surface-200: 240 245 244;
+
+  --ink-900: 16 32 30;
+  --ink-700: 62 68 72;
+  --ink-500: 107 113 117;
+  --ink-400: 130 138 142;
+
+  --accent: 15 124 113;
+  --accent-strong: 11 95 87;
+
+  --line-200: rgba(16, 32, 30, 0.12);
+  --page-glow: rgba(15, 124, 113, 0.03);
+  --glow: rgba(15, 124, 113, 0.14);
+
+  --kg-bg: #f7f9fb;
+  --kg-base: 16 32 30;
+  --kg-dot: 16 32 30;
+  --kg-line: 15 124 113;
+  --kg-node: 11 95 87;
+  --kg-glow: 15 124 113;
+  --kg-ripple: 11 95 87;
+}
+
+/**
+ * Full-bleed bands stay dark in BOTH themes (the WebGL scenes and the hero are
+ * built for a dark surface). Re-declaring the ink/accent/line tokens here means
+ * every `text-ink-*` descendant resolves to its light value without needing a
+ * per-element colour override.
+ */
+.band,
+.on-dark {
+  --ink-900: 234 242 239;
+  --ink-700: 195 212 206;
+  --ink-500: 140 163 157;
+  --ink-400: 110 133 128;
+  --accent: 127 184 170;
+  --accent-strong: 169 220 207;
+  --line-200: rgba(255, 255, 255, 0.09);
+  --surface-100: 22 33 30;
+  --surface-200: 27 42 38;
+  color: rgb(var(--ink-900));
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Anchor jumps clear the sticky header. */
+    scroll-padding-top: 6rem;
+  }
+
+  body {
+    @apply bg-surface-50 font-sans text-ink-900 antialiased;
+    font-feature-settings: "ss02";
+    background-image: radial-gradient(
+      70% 45% at 50% 0%,
+      var(--page-glow),
+      transparent 72%
+    );
+    background-repeat: no-repeat;
+    transition: background-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Accessible, high-contrast focus indicator on every interactive element. */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: rgb(var(--accent) / 0.3);
+    color: rgb(var(--ink-900));
+  }
+
+  * {
+    scrollbar-color: rgb(var(--ink-900) / 0.25) transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Component layer. Colour-setting classes must live here (not in      */
+/* `utilities`) so utility classes such as `text-white` can override    */
+/* them on dark sections.                                               */
+/* ------------------------------------------------------------------ */
+@layer components {
+  /**
+   * Full-bleed sections, measured content.
+   *
+   * Sections run edge to edge (their background bands are full width), but the
+   * inner content sits in a centred, capped measure. An uncapped container
+   * spreads a three-word heading and a paragraph across the whole monitor,
+   * which is what made the layout read as disorganised.
+   */
+  .container {
+    width: 80%;
+    max-width: 1800px;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (max-width: 767px) {
+    .container {
+      width: 100%;
+    }
+  }
+  @media (min-width: 640px) {
+    .container {
+      padding-inline: 2rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .container {
+      padding-inline: 3rem;
+    }
+  }
+
+  /* ---------------------------------------------- buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-btn px-5 py-2.5 text-sm font-medium
+      transition-all duration-200 ease-smooth focus-visible:outline-none disabled:cursor-not-allowed
+      disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-brand-700 text-white shadow-soft hover:bg-brand-800 hover:shadow-glow active:scale-[0.98];
+  }
+  .btn-secondary {
+    @apply btn border border-line-200 bg-surface text-ink-900 hover:border-brand-500/60 hover:bg-surface-100;
+  }
+  .btn-ghost {
+    @apply btn text-ink-700 hover:bg-surface-100 hover:text-accent;
+  }
+  .btn-danger {
+    @apply btn border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/20;
+  }
+
+  /* ---------------------------------------------- surfaces */
+  .card {
+    @apply rounded-card border border-line-200 bg-surface shadow-soft;
+  }
+  .tile {
+    @apply rounded-tile border border-line-200 bg-surface-100 shadow-soft;
+  }
+  /* Full-bleed darkest band (hero, labs, metrics, CTA). Dark in both themes. */
+  .band {
+    @apply bg-dark-900;
+  }
+  /* Solid surface. Deliberately not glassmorphism — translucent blur panels
+     fight the ambient grid and the text behind them. */
+  .glass {
+    @apply border border-line-200 bg-surface-100;
+  }
+  .hairline {
+    @apply h-px w-full bg-line-200;
+  }
+
+  /* ---------------------------------------------- forms */
+  .input {
+    @apply w-full rounded-btn border border-line-200 bg-surface-100 px-4 py-2.5 text-sm text-ink-900
+      placeholder:text-ink-500 transition-colors duration-200 focus:border-brand-500 focus:outline-none
+      focus:ring-2 focus:ring-brand-500/25;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink-700;
+  }
+
+  /* ---------------------------------------------- type */
+  .display-1 {
+    @apply text-[2rem] font-extrabold leading-[1.05] tracking-tight text-ink-900 sm:text-5xl lg:text-[4.25rem];
+  }
+  .display-2 {
+    @apply text-2xl font-bold leading-[1.1] tracking-tight text-ink-900 sm:text-4xl lg:text-[3rem];
+  }
+  .display-3 {
+    @apply text-xl font-bold leading-snug tracking-tight text-ink-900 sm:text-2xl lg:text-3xl;
+  }
+  .heading-1 {
+    @apply text-3xl font-extrabold leading-[1.2] text-ink-900 sm:text-4xl lg:text-5xl;
+  }
+  .heading-2 {
+    @apply text-2xl font-bold leading-tight text-ink-900 sm:text-3xl lg:text-4xl;
+  }
+  .heading-3 {
+    @apply text-lg font-bold text-ink-900 sm:text-xl;
+  }
+  .lead {
+    @apply text-base leading-8 text-ink-500 sm:text-lg;
+  }
+  .kicker {
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-accent;
+  }
+  .eyebrow {
+    @apply mb-3 inline-flex items-center gap-2 text-sm font-semibold text-accent;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full border border-brand-500/25 bg-brand-700/20 px-3 py-1 text-xs font-medium text-accent;
+  }
+
+  /* ---------------------------------------------- layout */
+  /* One vertical rhythm for every section, so pages feel related. */
+  .section {
+    @apply py-16 sm:py-20 lg:py-24;
+  }
+  .panel {
+    @apply border-y border-line-200 bg-surface;
+  }
+}
+
+@layer utilities {
+  .container-prose {
+    @apply mx-auto w-full max-w-4xl px-5 sm:px-8;
+  }
+  /* Subtle grid, used behind dark bands. */
+  .grid-lines {
+    background-image: linear-gradient(to right, rgba(127, 184, 170, 0.13) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(127, 184, 170, 0.13) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+  .glow-accent {
+    background: radial-gradient(circle, var(--glow), transparent 68%);
+  }
+
+  /**
+   * Scroll reveal. Sections start hidden and fade/rise into place as they are
+   * scrolled to. The initial state is applied by JS only (see RevealOnScroll),
+   * so a visitor without JS — or before hydration — still sees all content.
+   */
+  .section-reveal {
+    transition:
+      opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .section-reveal[data-visible="false"] {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  /* Article / legal body typography without a plugin dependency. */
+  .prose-page {
+    @apply text-[15px] leading-8 text-ink-700;
+  }
+  .prose-page h2 {
+    @apply mt-10 mb-3 text-xl font-bold text-ink-900;
+  }
+  .prose-page h3 {
+    @apply mt-8 mb-2 text-lg font-bold text-ink-900;
+  }
+  .prose-page p {
+    @apply mb-4;
+  }
+  .prose-page ul {
+    @apply mb-4 list-disc space-y-1.5 pr-6;
+  }
+  .prose-page ol {
+    @apply mb-4 list-decimal space-y-1.5 pr-6;
+  }
+  .prose-page a {
+    @apply font-medium text-accent underline underline-offset-4 hover:text-accent-strong;
+  }
+  .prose-page strong {
+    @apply font-semibold text-ink-900;
+  }
+  .prose-page code {
+    @apply rounded border border-line-200 bg-surface-100 px-1.5 py-0.5 text-[13px] text-ink-900;
+  }
+  .prose-page blockquote {
+    @apply mb-4 rounded-r-btn border-r-2 border-brand-500 bg-brand-700/10 px-4 py-3 text-ink-700;
+  }
+}
+
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes marquee-x-reverse {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes soft-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.06);
+  }
+}
+
+/* ------------------------------------------------------------ AI sphere ---
+   The hero's orb is a WebGL particle sphere (components/three/orb-scene.tsx).
+   `position: fixed` keeps it stationary on the left while the hero scrolls,
+   but it is scoped to the hero: HeroOrb fades it out (and unmounts the scene)
+   as soon as the hero leaves the viewport, so it never appears over the rest
+   of the site.
+
+   It is `pointer-events: none` — it must never intercept clicks on the content
+   that scrolls past it — so it tracks the cursor through a window-level
+   listener instead. `z-index: -1` puts it above the ambient grid canvas (-10)
+   and below the hero's text. */
+.sphere {
+  position: fixed;
+  left: clamp(0px, 2vw, 40px);
+  top: 50%;
+  z-index: -1;
+  width: clamp(240px, 44vw, 760px);
+  height: clamp(240px, 44vw, 760px);
+  transform: translateY(-50%);
+  pointer-events: none;
+  will-change: transform, opacity;
+  /* Driven by HeroOrb: 1 while the hero is on screen, fading to 0 as it leaves,
+     so the orb is only ever visible inside its own section. */
+  opacity: var(--sphere-fade, 1);
+}
+.sphere canvas {
+  display: block;
+}
+
+@media (max-width: 767px) {
+  /* Keep it clear of the copy on phones: it becomes a soft backdrop. */
+  .sphere {
+    left: 50%;
+    width: min(92vw, 460px);
+    height: min(92vw, 460px);
+    transform: translate(-50%, -50%);
+    opacity: calc(var(--sphere-fade, 1) * 0.7);
+  }
+}

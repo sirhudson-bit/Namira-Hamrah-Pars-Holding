@@ -1,0 +1,229 @@
+// Namira Holding — corporate website + CMS data model.
+// SQLite for zero-config local runs; the schema is portable to PostgreSQL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Key/value site settings (contact info, social links, SEO defaults, toggles).
+model Setting {
+  key       String   @id
+  value     String
+  group     String   @default("general")
+  updatedAt DateTime @updatedAt
+}
+
+/// Back-office operator. Seeded from prisma/seed.ts.
+model AdminUser {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         String    @default("admin") // admin | editor
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ip        String?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+}
+
+/// Long-form content pages: legal documents, about, innovation intro, etc.
+model Page {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  /// Small label above the page title ("kicker").
+  eyebrow     String?
+  subtitle    String?
+  /// Markdown body rendered by the shared renderer.
+  body        String   @default("")
+  seoTitle    String?
+  seoDesc     String?
+  published   Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
+
+/// The five business groups under the holding.
+model BusinessGroup {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  tagline     String
+  description String
+  icon        String   @default("Boxes")
+  color       String   @default("#0F7C71")
+  highlights  String   @default("") // newline-separated bullet points
+  /// Optional call-to-action on the group card, configurable per group from the
+  /// admin panel. When `ctaUrl` is empty the card falls back to the internal
+  /// detail page.
+  ctaLabel    String   @default("")
+  ctaUrl      String   @default("")
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+}
+
+/// Sales channels: online stores, physical store, corporate sales.
+model Store {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  /// B2C | B2B | PHYSICAL | CORPORATE
+  kind        String   @default("B2C")
+  description String
+  url         String?
+  phone       String?
+  address     String?
+  email       String?
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+}
+
+/// After-sales and support service entries.
+model ServiceItem {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  icon        String   @default("Sparkles")
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+}
+
+/// Organizational units listed under /units.
+model OrgUnit {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  /// offline | online | commercial | finance | hr | marketing | support
+  kind        String   @default("offline")
+  description String
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+}
+
+model NewsPost {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  excerpt     String
+  body        String   @default("")
+  category    String   @default("خبر")
+  published   Boolean  @default(false)
+  publishedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BlogPost {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  excerpt     String
+  body        String   @default("")
+  category    String   @default("مقاله")
+  author      String   @default("تیم نامیرا")
+  published   Boolean  @default(false)
+  publishedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model JobOpening {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  department   String
+  location     String   @default("تهران")
+  type         String   @default("تمام‌وقت")
+  description  String
+  requirements String   @default("")
+  active       Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  updatedAt    DateTime @updatedAt
+}
+
+model JobApplication {
+  id            String   @id @default(cuid())
+  name          String
+  email         String
+  phone         String
+  position      String
+  resumeName    String?
+  resumePath    String?
+  coverLetter   String?
+  dataConsent   Boolean  @default(false)
+  retentionConsent Boolean @default(false)
+  status        String   @default("new") // new | review | archived
+  createdAt     DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  consent   Boolean  @default(false)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model MediaAsset {
+  id        String   @id @default(cuid())
+  filename  String
+  path      String
+  mime      String
+  size      Int
+  alt       String   @default("")
+  createdAt DateTime @default(now())
+}
+
+/// Namira Labs innovation projects.
+model InnovationProject {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  status      String   @default("در حال توسعه")
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+}
+
+model TeamMember {
+  id        String  @id @default(cuid())
+  name      String
+  role      String
+  bio       String  @default("")
+  sortOrder Int     @default(0)
+  published Boolean @default(true)
+}
+
+model Milestone {
+  id          String  @id @default(cuid())
+  year        String
+  title       String
+  description String
+  sortOrder   Int     @default(0)
+}
