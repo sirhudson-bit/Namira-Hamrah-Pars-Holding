@@ -5,7 +5,7 @@
 // Single instance on purpose: the database is SQLite (one writer) and uploads
 // live on local disk. Do NOT switch to cluster mode / instances > 1.
 const appDir = process.env.APP_DIR || "/var/www/namira";
-const port = process.env.PORT || "3000";
+const port = process.env.PORT || "3001";
 const appName = process.env.APP_NAME || "namira";
 
 module.exports = {

@@ -1,31 +1,25 @@
-# Deployment — namirahamra.ir
+# Deployment — namirahamrah.ir
 
-Target: Ubuntu 22.04 / 24.04 VPS, Node 22, pm2, nginx, SQLite on local disk.
+Host: `194.56.148.100` (Ubuntu 24.04, 2 vCPU / 3.8 GB, root login with SSH key).
+Node 20, pm2, nginx, SQLite on local disk.
+
+**Port 3001, not 3000.** Another site on this box (`academyr.ir`) already proxies
+to `127.0.0.1:3000`, so the defaults in these scripts are 3001. Do not change it
+without checking `ss -tlnp`.
 
 ## First time
 
 ```bash
-ssh user@SERVER_IP
-sudo apt-get update && sudo apt-get install -y git
 git clone https://github.com/sirhudson-bit/Namira-Hamrah-Pars-Holding.git /tmp/namira
-bash /tmp/namira/deploy/bootstrap.sh
+ALLOW_ROOT=1 SEED=1 SEED_ADMIN_PASSWORD='<strong-password>' bash /tmp/namira/deploy/bootstrap.sh
 ```
 
-Optional flags (env vars, before the command):
+`ALLOW_ROOT=1` is only needed because this box logs in as root; on a normal
+server run it as a sudo user without that flag. `bootstrap.sh` is idempotent.
 
-```bash
-SEED=1 bash deploy/bootstrap.sh      # also seed the database (admin user)
-PORT=3000 DOMAIN=namirahamra.ir bash deploy/bootstrap.sh
-```
-
-Then TLS:
-
-```bash
-sudo apt-get install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d namirahamra.ir -d www.namirahamra.ir
-```
-
-DNS (A records → server IP) must resolve **before** certbot runs.
+Other env vars: `DOMAIN`, `PORT`, `APP_DIR`, `BRANCH`, and `REMOVE_DEFAULT=1`
+(deletes the stock nginx default vhost — off by default so other sites keep
+their catch-all).
 
 ## Every later deploy
 
@@ -34,8 +28,33 @@ cd /var/www/namira && bash deploy/redeploy.sh
 ```
 
 It pulls `main`, backs up SQLite to `prisma/backups/`, syncs the schema, rebuilds,
-and reloads pm2. It refuses to run a destructive `prisma db push` — resolve that
-by hand so data isn't silently dropped.
+and restarts pm2 (single instance — a short restart, not zero-downtime). It
+refuses a destructive `prisma db push` so data isn't silently dropped.
+
+## TLS — blocked until DNS is fixed
+
+`namirahamrah.ir` is registered, but its delegated nameservers do not answer:
+
+```
+EDE(22): No Reachable Authority at delegation namirahamrah.ir
+```
+
+Fix the NS records at the registrar (point them at your DNS host), then add:
+
+| Type | Name | Value |
+| --- | --- | --- |
+| A | `@` | `194.56.148.100` |
+| A | `www` | `194.56.148.100` |
+
+Once `dig +short namirahamrah.ir` returns the server IP:
+
+```bash
+sudo apt-get install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d namirahamrah.ir -d www.namirahamrah.ir
+```
+
+Until then the site answers by Host header only:
+`curl -H 'Host: namirahamrah.ir' http://127.0.0.1:3001/`
 
 ## Operational facts
 
@@ -47,13 +66,15 @@ by hand so data isn't silently dropped.
 | Env | `/var/www/namira/.env` (chmod 600, gitignored) |
 | Logs | `pm2 logs namira`, `/var/log/namira/` |
 | Service | `pm2 status`, `pm2 restart namira` |
+| nginx site | `/etc/nginx/sites-available/namira` |
 
 - **One process only.** SQLite allows a single writer; `instances: 1` in
   `ecosystem.config.cjs` is deliberate. Never switch to cluster mode.
 - **Backups.** `prod.db` and `storage/uploads/` are the only stateful pieces.
   Copy both off the box regularly; a code-only redeploy does not recreate them.
-- **Secrets.** `APP_SECRET` and the seeded admin password must be changed before
-  the site is public. Rotating `APP_SECRET` invalidates every session cookie.
+- **Secrets.** `APP_SECRET` is generated on first boot; rotating it invalidates
+  every session cookie. The seeded admin password must not stay at the
+  documented default.
 - Moving to PostgreSQL later: change the `datasource` provider in
-  `prisma/schema.prisma`, point `DATABASE_URL` at the new server, and drop the
-  single-instance constraint.
+  `prisma/schema.prisma`, point `DATABASE_URL` at the new server, then the
+  single-instance constraint can go.

@@ -52,9 +52,9 @@ log "Building"
 npm run build
 
 log "Reloading pm2"
-APP_DIR="$APP_DIR" PORT="${PORT:-3000}" pm2 startOrReload deploy/ecosystem.config.cjs --update-env
+APP_DIR="$APP_DIR" PORT="${PORT:-3001}" pm2 startOrReload deploy/ecosystem.config.cjs --update-env
 pm2 save
 
 log "Deployed"
 pm2 status "$APP_NAME"
-printf '\nHealth check: curl -sS -o /dev/null -w "%%{http_code}\\n" http://127.0.0.1:%s/\n' "${PORT:-3000}"
+printf '\nHealth check: curl -sS -o /dev/null -w "%%{http_code}\\n" http://127.0.0.1:%s/\n' "${PORT:-3001}"

@@ -10,8 +10,8 @@ set -euo pipefail
 
 APP_NAME="${APP_NAME:-namira}"
 APP_DIR="${APP_DIR:-/var/www/namira}"
-DOMAIN="${DOMAIN:-namirahamra.ir}"
-PORT="${PORT:-3000}"
+DOMAIN="${DOMAIN:-namirahamrah.ir}"
+PORT="${PORT:-3001}"
 REPO="${REPO:-https://github.com/sirhudson-bit/Namira-Hamrah-Pars-Holding.git}"
 BRANCH="${BRANCH:-main}"
 NODE_MAJOR="${NODE_MAJOR:-22}"
@@ -21,7 +21,9 @@ log() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 warn() { printf '\033[1;33m!! %s\033[0m\n' "$*"; }
 die() { printf '\033[1;31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 
-[[ "$(id -u)" -eq 0 ]] && die "Do not run as root. Use a regular user with sudo."
+if [[ "$(id -u)" -eq 0 && "${ALLOW_ROOT:-0}" != "1" ]]; then
+  die "Do not run as root. Use a regular user with sudo (or set ALLOW_ROOT=1 on a root-only box)."
+fi
 command -v sudo >/dev/null 2>&1 || die "sudo is required."
 command -v apt-get >/dev/null 2>&1 || die "This script targets Ubuntu/Debian."
 
@@ -114,7 +116,9 @@ log "Writing nginx site for ${DOMAIN}"
 sed "s/__DOMAIN__/${DOMAIN}/g; s/__PORT__/${PORT}/g" deploy/nginx.conf \
   | sudo tee /etc/nginx/sites-available/"$APP_NAME" >/dev/null
 sudo ln -sf /etc/nginx/sites-available/"$APP_NAME" /etc/nginx/sites-enabled/"$APP_NAME"
-sudo rm -f /etc/nginx/sites-enabled/default
+if [[ "${REMOVE_DEFAULT:-0}" == "1" ]]; then
+  sudo rm -f /etc/nginx/sites-enabled/default
+fi
 sudo nginx -t
 sudo systemctl reload nginx
 
