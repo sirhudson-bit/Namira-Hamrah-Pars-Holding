@@ -397,6 +397,14 @@ scripts/
 
 ## Deployment
 
+Target: Ubuntu VPS, Node 22, pm2 + nginx, SQLite on local disk. Scripts and the
+full runbook live in [`deploy/`](./deploy/README.md).
+
+```bash
+bash deploy/bootstrap.sh     # first time on a fresh server
+bash deploy/redeploy.sh      # every deploy after that
+```
+
 Run `npm run build` then `npm run start` behind a reverse proxy (a Node runtime is required).
 Move `DATABASE_URL` to PostgreSQL for production by changing the Prisma datasource provider.
 Serve over HTTPS and set `NEXT_PUBLIC_SITE_URL`.
