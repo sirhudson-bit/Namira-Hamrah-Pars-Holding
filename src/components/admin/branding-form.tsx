@@ -18,7 +18,7 @@ export function BrandingUploader({
   tone = "light",
   square = false,
 }: {
-  kind: "logo" | "logo_light" | "favicon";
+  kind: "logo" | "logo_light" | "favicon" | "page_hero_bg";
   label: string;
   hint: string;
   current: string;
@@ -55,7 +55,7 @@ export function BrandingUploader({
         className={cn(
           "mt-4 flex items-center justify-center rounded-xl border border-line-200 p-3",
           tone === "dark" ? "bg-dark-900" : "bg-surface-50",
-          square ? "h-16 w-16" : "h-20 w-48",
+          square ? "h-16 w-16" : kind === "page_hero_bg" ? "h-24 w-full" : "h-20 w-48",
         )}
       >
         {current ? (
@@ -63,7 +63,10 @@ export function BrandingUploader({
           <img
             src={current}
             alt=""
-            className={cn("object-contain", square ? "h-10 w-10" : "max-h-full max-w-full")}
+            className={cn(
+              "object-contain",
+              square ? "h-10 w-10" : kind === "page_hero_bg" ? "max-h-full w-full object-cover" : "max-h-full max-w-full",
+            )}
           />
         ) : (
           <span className="text-[11px] text-ink-500">فایلی بارگذاری نشده</span>

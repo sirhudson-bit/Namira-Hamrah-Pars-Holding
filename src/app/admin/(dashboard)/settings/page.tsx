@@ -53,6 +53,22 @@ export default async function AdminSettingsPage() {
         <LogoSizeForm value={settings.logo_height} />
       </section>
 
+      <section className="card p-6">
+        <h2 className="heading-3 mb-1">پس‌زمینه هیروی صفحات</h2>
+        <p className="mb-6 text-sm text-ink-500">
+          تصویری که پشت عنوان همه‌ی صفحات داخلی (درباره ما، تماس، فروشگاه‌ها و …) نمایش
+          داده می‌شود. یک لایه‌ی هم‌رنگ تم روی تصویر می‌نشیند تا متن در حالت روشن و تیره
+          خوانا بماند. تصاویر رستری خودکار به WebP تبدیل می‌شوند؛ حداکثر ۸ مگابایت.
+        </p>
+        <BrandingUploader
+          kind="page_hero_bg"
+          label="تصویر پس‌زمینه هیرو"
+          hint="نسبت پیشنهادی ۱۶:۹ و عرض دست‌کم ۱۹۲۰ پیکسل. اگر خالی بماند، هیرو مثل قبل ساده است."
+          current={settings.page_hero_bg}
+          tone="dark"
+        />
+      </section>
+
       <SettingsForm settings={settings} />
 
       <PasswordForm email={user.email} />

@@ -66,6 +66,38 @@ function heroFields(s: SiteSettings): FieldSpec[] {
       defaultChecked: s.hero_enabled !== "false",
       hint: "با خاموش کردن، کره متحرک از صفحه اصلی حذف می‌شود.",
     },
+    {
+      type: "select",
+      name: "hero_orb_align",
+      label: "محل قرارگیری کره",
+      options: [
+        { value: "left", label: "چپ صفحه" },
+        { value: "right", label: "راست صفحه" },
+        { value: "center", label: "وسط صفحه" },
+      ],
+      defaultValue: s.hero_orb_align,
+    },
+    {
+      type: "number",
+      name: "hero_orb_x",
+      label: "فاصله افقی کره (vw)",
+      hint: "فاصله از همان لبه‌ای که بالا انتخاب شد، به درصد عرض صفحه. ۰ یعنی چسبیده به لبه.",
+      defaultValue: s.hero_orb_x,
+    },
+    {
+      type: "number",
+      name: "hero_orb_y",
+      label: "موقعیت عمودی کره (vh)",
+      hint: "۵۰ یعنی وسط ارتفاع صفحه؛ کمتر = بالاتر، بیشتر = پایین‌تر.",
+      defaultValue: s.hero_orb_y,
+    },
+    {
+      type: "number",
+      name: "hero_orb_size",
+      label: "قطر کره (vw)",
+      hint: "بین ۲۰ تا ۸۰ درصد عرض صفحه. پیش‌فرض ۴۴.",
+      defaultValue: s.hero_orb_size,
+    },
   ];
 }
 

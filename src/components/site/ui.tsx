@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/motion/reveal";
 import { getPageCopy } from "@/server/content";
+import { getSettings } from "@/server/settings";
 
 export function Breadcrumb({ items }: { items: { label: string; href?: string }[] }) {
   return (
@@ -54,9 +55,11 @@ export async function PageHero({
   className?: string;
 }) {
   const copy = slug ? await getPageCopy(slug) : null;
+  const settings = await getSettings();
   const kicker = copy?.eyebrow || eyebrow;
   const heading = copy?.title || title;
   const lead = copy?.description || description;
+  const backdrop = settings.page_hero_bg;
 
   return (
     <section
@@ -65,11 +68,26 @@ export async function PageHero({
         className,
       )}
     >
+      {backdrop ? (
+        /**
+         * Admin-supplied backdrop. The scrim is painted in theme tokens rather
+         * than a fixed black/white wash, so the same photo keeps the headline
+         * legible in both light and dark mode: the gradient is densest behind
+         * the copy on the right and fades towards the empty side.
+         */
+        <div className="pointer-events-none absolute inset-0" aria-hidden>
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${backdrop})` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-l from-surface-50/90 via-surface-50/60 to-surface-50/15" />
+        </div>
+      ) : null}
       <div
         className="pointer-events-none absolute inset-0 grid-lines opacity-30"
         aria-hidden
       />
-      <div className="container relative py-16 sm:py-20 lg:py-24">
+      <div className="container relative z-10 py-16 sm:py-20 lg:py-24">
         <Reveal>
           {breadcrumb ? <Breadcrumb items={breadcrumb} /> : null}
           {kicker ? (

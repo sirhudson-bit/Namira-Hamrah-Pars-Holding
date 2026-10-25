@@ -478,11 +478,13 @@
    and below the hero's text. */
 .sphere {
   position: fixed;
-  left: clamp(0px, 2vw, 40px);
-  top: 50%;
+  /* Placement is admin-controlled (/admin/home): `--sphere-x` is the distance
+     from the chosen edge in vw, `--sphere-y` the vertical centre in vh and
+     `--sphere-size` the diameter in vw. */
+  top: calc(var(--sphere-y, 50) * 1vh);
   z-index: -1;
-  width: clamp(240px, 44vw, 760px);
-  height: clamp(240px, 44vw, 760px);
+  width: clamp(240px, var(--sphere-size, 44vw), 760px);
+  height: clamp(240px, var(--sphere-size, 44vw), 760px);
   transform: translateY(-50%);
   pointer-events: none;
   will-change: transform, opacity;
@@ -490,14 +492,27 @@
      so the orb is only ever visible inside its own section. */
   opacity: var(--sphere-fade, 1);
 }
+.sphere[data-align="left"] {
+  left: calc(var(--sphere-x, 2) * 1vw);
+}
+.sphere[data-align="right"] {
+  right: calc(var(--sphere-x, 2) * 1vw);
+}
+.sphere[data-align="center"] {
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
 .sphere canvas {
   display: block;
 }
 
 @media (max-width: 767px) {
-  /* Keep it clear of the copy on phones: it becomes a soft backdrop. */
-  .sphere {
+  /* Keep it clear of the copy on phones: it becomes a soft backdrop, centred
+     regardless of the desktop placement. */
+  .sphere,
+  .sphere[data-align] {
     left: 50%;
+    right: auto;
     width: min(92vw, 460px);
     height: min(92vw, 460px);
     transform: translate(-50%, -50%);

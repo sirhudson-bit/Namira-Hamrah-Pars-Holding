@@ -13,7 +13,7 @@ import {
   requireAdmin,
   verifyPassword,
 } from "@/server/auth";
-import { FONT_SIZE_RANGE, LINE_HEIGHT_RANGE } from "@/server/settings";
+import { FONT_SIZE_RANGE, LINE_HEIGHT_RANGE, ORB_ALIGNMENTS, ORB_RANGE } from "@/server/settings";
 import { toPersianDigits } from "@/lib/format";
 import { extractEmbedUrl } from "@/lib/embed";
 import type { ActionResult } from "@/server/actions";
@@ -544,9 +544,45 @@ export async function saveHero(
     create: { key: "hero_enabled", value: enabled, group: "hero" },
   });
 
+  // Orb placement. Validated and clamped here so a typo cannot push the canvas
+  // off-screen; zero is allowed (flush against the edge).
+  const align = str(formData, "hero_orb_align");
+  const orb: Record<string, string> = {
+    hero_orb_align: (ORB_ALIGNMENTS as readonly string[]).includes(align) ? align : "left",
+    hero_orb_x: String(
+      clampOrZero(str(formData, "hero_orb_x"), ORB_RANGE.x.min, ORB_RANGE.x.max, ORB_RANGE.x.fallback),
+    ),
+    hero_orb_y: String(
+      clampOrZero(str(formData, "hero_orb_y"), ORB_RANGE.y.min, ORB_RANGE.y.max, ORB_RANGE.y.fallback),
+    ),
+    hero_orb_size: String(
+      clampOrZero(
+        str(formData, "hero_orb_size"),
+        ORB_RANGE.size.min,
+        ORB_RANGE.size.max,
+        ORB_RANGE.size.fallback,
+      ),
+    ),
+  };
+  for (const [key, value] of Object.entries(orb)) {
+    await prisma.setting.upsert({
+      where: { key },
+      update: { value },
+      create: { key, value, group: "hero" },
+    });
+  }
+
   revalidatePath("/");
   revalidatePath("/admin/home");
+  revalidatePath("/", "layout");
   return { ok: true, message: "بخش صفحه اصلی ذخیره شد." };
+}
+
+/** Numeric clamp that treats 0 as a valid value (unlike `clampNumber`). */
+function clampOrZero(value: string, min: number, max: number, fallback: number): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
 }
 
 /* ------------------------------ inbox ------------------------------ */
@@ -728,16 +764,19 @@ export async function saveLogoSize(
   return { ok: true, message: `اندازه لوگو روی ${height} پیکسل تنظیم شد.` };
 }
 
-const BRAND_KINDS = ["logo", "logo_light", "favicon"] as const;
+const BRAND_KINDS = ["logo", "logo_light", "favicon", "page_hero_bg"] as const;
 type BrandKind = (typeof BRAND_KINDS)[number];
 
 const BRAND_SETTING_KEY: Record<BrandKind, string> = {
   logo: "logo_path",
   logo_light: "logo_light_path",
   favicon: "favicon_path",
+  page_hero_bg: "page_hero_bg",
 };
 
 const MAX_BRAND_BYTES = 2 * 1024 * 1024;
+/** Backdrops are full-bleed photos; two megabytes is needlessly tight for them. */
+const MAX_BACKDROP_BYTES = 8 * 1024 * 1024;
 const ALLOWED_BRAND = new Set([
   "image/png",
   "image/jpeg",
@@ -777,7 +816,11 @@ export async function uploadBrandAsset(
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return fail("فایلی انتخاب نشده است.");
-  if (file.size > MAX_BRAND_BYTES) return fail("حجم فایل باید کمتر از ۲ مگابایت باشد.");
+  const maxBytes = kind === "page_hero_bg" ? MAX_BACKDROP_BYTES : MAX_BRAND_BYTES;
+  if (file.size > maxBytes) {
+    const mb = Math.round(maxBytes / (1024 * 1024));
+    return fail(`حجم فایل باید کمتر از ${toPersianDigits(mb)} مگابایت باشد.`);
+  }
   if (!ALLOWED_BRAND.has(file.type)) {
     return fail("فرمت فایل مجاز نیست (PNG، SVG، WEBP، JPG یا ICO).");
   }

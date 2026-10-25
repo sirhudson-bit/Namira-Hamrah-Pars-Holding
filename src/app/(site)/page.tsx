@@ -89,7 +89,14 @@ export default async function HomePage() {
         components/motion/hero-orb.tsx).
       */}
       <section className="relative flex min-h-[100svh] flex-col overflow-hidden">
-        {showSphere ? <HeroOrb /> : null}
+        {showSphere ? (
+          <HeroOrb
+            align={settings.hero_orb_align as "left" | "right" | "center"}
+            offsetX={Number(settings.hero_orb_x)}
+            offsetY={Number(settings.hero_orb_y)}
+            size={Number(settings.hero_orb_size)}
+          />
+        ) : null}
 
         <div className="container relative z-10 flex flex-1 items-center py-16 sm:py-20">
           <div className="grid w-full items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">

@@ -46,6 +46,18 @@ export type SiteSettings = {
   /** "true" hides the public site behind the maintenance screen. */
   maintenance_mode: string;
   maintenance_message: string;
+  /* Page-hero backdrop, managed from /admin/settings → «لوگو و فاوآیکون». */
+  /** Image painted behind every inner-page hero (empty = plain canvas). */
+  page_hero_bg: string;
+  /* Home hero orb placement, managed from /admin/home. */
+  /** "left" | "right" | "center" — which edge the orb is pinned to. */
+  hero_orb_align: string;
+  /** Horizontal distance from that edge, in vw. */
+  hero_orb_x: string;
+  /** Vertical centre of the orb, in vh from the top. */
+  hero_orb_y: string;
+  /** Orb diameter, in vw (clamped 20–80). */
+  hero_orb_size: string;
 };
 
 /**
@@ -96,7 +108,22 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   maintenance_mode: "false",
   maintenance_message:
     "سایت در حال به‌روزرسانی است. لطفاً چند دقیقه بعد دوباره سر بزنید.",
+  page_hero_bg: "",
+  hero_orb_align: "left",
+  hero_orb_x: "2",
+  hero_orb_y: "50",
+  hero_orb_size: "44",
 };
+
+/** Allowed placements for the hero orb, in the order the admin sees them. */
+export const ORB_ALIGNMENTS = ["left", "right", "center"] as const;
+
+/** Ranges for the orb controls; anything outside is clamped on the way out. */
+export const ORB_RANGE = {
+  x: { min: 0, max: 80, fallback: 2 },
+  y: { min: 0, max: 100, fallback: 50 },
+  size: { min: 20, max: 80, fallback: 44 },
+} as const;
 
 /** Reading range for the typography controls; anything outside is clamped. */
 export const FONT_SIZE_RANGE = { min: 14, max: 18, fallback: 16 } as const;
@@ -123,6 +150,13 @@ const EMBED_KEYS = new Set<keyof SiteSettings>(["map_embed", "video_embed"]);
 function clampSetting(value: string, min: number, max: number, fallback: number): string {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) return String(fallback);
+  return String(Math.min(max, Math.max(min, n)));
+}
+
+/** Like `clampSetting`, but zero is a legitimate value (flush to the edge). */
+function clampOrb(value: string, min: number, max: number, fallback: number): string {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return String(fallback);
   return String(Math.min(max, Math.max(min, n)));
 }
 
@@ -161,6 +195,20 @@ export const getSettings = cache(async (): Promise<SiteSettings> => {
     LINE_HEIGHT_RANGE.fallback,
   );
   settings.maintenance_mode = settings.maintenance_mode === "true" ? "true" : "false";
+
+  settings.hero_orb_align = (ORB_ALIGNMENTS as readonly string[]).includes(
+    settings.hero_orb_align,
+  )
+    ? settings.hero_orb_align
+    : "left";
+  settings.hero_orb_x = clampOrb(settings.hero_orb_x, ORB_RANGE.x.min, ORB_RANGE.x.max, ORB_RANGE.x.fallback);
+  settings.hero_orb_y = clampOrb(settings.hero_orb_y, ORB_RANGE.y.min, ORB_RANGE.y.max, ORB_RANGE.y.fallback);
+  settings.hero_orb_size = clampOrb(
+    settings.hero_orb_size,
+    ORB_RANGE.size.min,
+    ORB_RANGE.size.max,
+    ORB_RANGE.size.fallback,
+  );
 
   return settings;
 });

@@ -17,6 +17,8 @@ export function Header({ settings }: { settings: HeaderSettings }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
+  /** Which desktop dropdown is open — hover/focus open it, a click closes it. */
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [compact, setCompact] = useState(false);
   const { scrollY } = useScroll();
 
@@ -25,7 +27,17 @@ export function Header({ settings }: { settings: HeaderSettings }) {
   useEffect(() => {
     setMobileOpen(false);
     setOpenSection(null);
+    setOpenMenu(null);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!openMenu) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenMenu(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openMenu]);
 
   useEffect(() => {
     document.documentElement.style.overflow = mobileOpen ? "hidden" : "";
@@ -102,10 +114,27 @@ export function Header({ settings }: { settings: HeaderSettings }) {
                 );
               }
               return (
-                <div key={item.label} className="group relative">
+                <div
+                  key={item.label}
+                  className="relative"
+                  onMouseEnter={() => setOpenMenu(item.label)}
+                  onMouseLeave={() =>
+                    setOpenMenu((current) => (current === item.label ? null : current))
+                  }
+                  onFocus={() => setOpenMenu(item.label)}
+                  onBlur={(event) => {
+                    // Keep it open while focus moves between the trigger and the
+                    // links inside the panel; close as soon as focus leaves.
+                    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                      setOpenMenu((current) => (current === item.label ? null : current));
+                    }
+                  }}
+                >
                   <Link
                     href={item.href}
                     aria-haspopup="true"
+                    aria-expanded={openMenu === item.label}
+                    onClick={() => setOpenMenu(null)}
                     className={cn(
                       "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-2 text-[12.5px] font-medium transition-colors duration-200",
                       active ? "text-accent" : "text-ink-700 hover:text-accent",
@@ -114,7 +143,10 @@ export function Header({ settings }: { settings: HeaderSettings }) {
                     {item.shortLabel ?? item.label}
                     <svg
                       viewBox="0 0 24 24"
-                      className="h-3 w-3 transition-transform duration-300 group-hover:rotate-180"
+                      className={cn(
+                        "h-3 w-3 transition-transform duration-300",
+                        openMenu === item.label && "rotate-180",
+                      )}
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
@@ -123,12 +155,26 @@ export function Header({ settings }: { settings: HeaderSettings }) {
                       <path d="m6 9 6 6 6-6" />
                     </svg>
                   </Link>
-                  <div className="invisible absolute right-0 top-full z-50 w-72 translate-y-2 pt-3 opacity-0 transition-all duration-300 ease-smooth group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                  {/*
+                    State driven, not `group-hover`: a CSS-hover panel stays
+                    visible after a click because the clicked link keeps focus
+                    (and its `:hover`), which is exactly the leak that made the
+                    submenu hang around until you clicked somewhere else.
+                  */}
+                  <div
+                    className={cn(
+                      "absolute right-0 top-full z-50 w-72 pt-3 transition-all duration-300 ease-smooth",
+                      openMenu === item.label
+                        ? "visible translate-y-0 opacity-100"
+                        : "invisible translate-y-2 opacity-0",
+                    )}
+                  >
                     <div className="overflow-hidden rounded-2xl border border-line-200 bg-surface/95 p-2 shadow-lift backdrop-blur-xl">
                       {item.children.map((child) => (
                         <Link
                           key={child.href}
                           href={child.href}
+                          onClick={() => setOpenMenu(null)}
                           className="block rounded-xl px-3 py-2.5 transition-colors duration-200 hover:bg-surface-100"
                         >
                           <span className="block text-[13px] font-medium text-ink-900">
