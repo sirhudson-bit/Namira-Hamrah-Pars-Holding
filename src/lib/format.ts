@@ -1,4 +1,5 @@
 const PERSIAN_DIGITS = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+const LATIN_DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
 /**
  * Converts every ASCII digit in a string to its Persian counterpart.
@@ -13,6 +14,25 @@ export function toPersianDigits(input: string | number): string {
   for (let i = 0; i < text.length; i++) {
     const code = text.charCodeAt(i);
     out += code >= 48 && code <= 57 ? PERSIAN_DIGITS[code - 48] : text[i];
+  }
+  return out;
+}
+
+/**
+ * Converts Persian and Arabic-Indic digits back to ASCII.
+ *
+ * Needed wherever a digit-bearing value has to leave the page as a machine
+ * value: `tel:` URIs, `href`s and anything a browser or dialer must parse.
+ * Persian numerals in `tel:۰۲۱…` do not dial.
+ */
+export function toLatinDigits(input: string | number): string {
+  const text = String(input);
+  let out = "";
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    if (code >= 0x06f0 && code <= 0x06f9) out += LATIN_DIGITS[code - 0x06f0];
+    else if (code >= 0x0660 && code <= 0x0669) out += LATIN_DIGITS[code - 0x0660];
+    else out += text[i];
   }
   return out;
 }

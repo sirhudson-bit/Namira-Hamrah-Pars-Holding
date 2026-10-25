@@ -13,6 +13,11 @@ export function Field({
   dir,
   placeholder,
   hint,
+  autoComplete,
+  min,
+  max,
+  step,
+  inputMode,
 }: {
   label: string;
   name: string;
@@ -23,6 +28,11 @@ export function Field({
   dir?: "rtl" | "ltr";
   placeholder?: string;
   hint?: string;
+  autoComplete?: string;
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
+  inputMode?: "text" | "numeric" | "decimal" | "tel" | "email" | "url";
 }) {
   return (
     <div>
@@ -38,6 +48,11 @@ export function Field({
         required={required}
         placeholder={placeholder}
         defaultValue={defaultValue ?? ""}
+        autoComplete={autoComplete}
+        min={min}
+        max={max}
+        step={step}
+        inputMode={inputMode}
         aria-invalid={error ? true : undefined}
         className={cn("input", error && "border-red-400")}
       />

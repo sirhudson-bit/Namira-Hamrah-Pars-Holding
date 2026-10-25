@@ -7,7 +7,15 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import sharp from "sharp";
 import { prisma } from "@/server/db";
-import { requireAdmin } from "@/server/auth";
+import {
+  hashPassword,
+  getSessionToken,
+  requireAdmin,
+  verifyPassword,
+} from "@/server/auth";
+import { FONT_SIZE_RANGE, LINE_HEIGHT_RANGE } from "@/server/settings";
+import { toPersianDigits } from "@/lib/format";
+import { extractEmbedUrl } from "@/lib/embed";
 import type { ActionResult } from "@/server/actions";
 import type { MediaItem } from "@/lib/media";
 
@@ -359,32 +367,142 @@ const EDITABLE_SETTING_KEYS = [
   "analytics_enabled",
   "ga_id",
   "video_embed",
+  "font_size",
+  "line_height",
+  "maintenance_mode",
+  "maintenance_message",
 ];
+
+/** Keys posted by a checkbox ("on"/"") rather than a text field. */
+const CHECKBOX_SETTING_KEYS = new Set(["analytics_enabled", "maintenance_mode"]);
+
+/** Keys whose stored form must be a Persian-numeral string. */
+const PERSIAN_NUMBER_KEYS = new Set([
+  "phone",
+  "mobile",
+  "registration_number",
+  "national_id",
+]);
+
+/** Keys whose stored form must be a bare URL, never an embed snippet. */
+const EMBED_KEYS = new Set(["map_embed", "video_embed"]);
 
 export async function saveSettings(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
   await requireAdmin();
+
   for (const key of EDITABLE_SETTING_KEYS) {
-    if (key === "analytics_enabled") continue;
-    const value = str(formData, key);
+    if (CHECKBOX_SETTING_KEYS.has(key)) continue;
+
+    let value = str(formData, key);
+
+    // An administrator typing Latin digits (021-91008800) still gets the
+    // Persian numerals the rest of the site is set in.
+    if (PERSIAN_NUMBER_KEYS.has(key)) value = toPersianDigits(value);
+
+    // Google Maps / video snippets are reduced to the bare `src` so a pasted
+    // `<iframe …>` can never be requested as a relative path (the 404 map).
+    if (EMBED_KEYS.has(key)) value = extractEmbedUrl(value);
+
+    if (key === "font_size") {
+      value = String(clampNumber(value, FONT_SIZE_RANGE.min, FONT_SIZE_RANGE.max, FONT_SIZE_RANGE.fallback));
+    }
+    if (key === "line_height") {
+      value = clampNumber(value, LINE_HEIGHT_RANGE.min, LINE_HEIGHT_RANGE.max, LINE_HEIGHT_RANGE.fallback).toFixed(2);
+    }
+
     await prisma.setting.upsert({
       where: { key },
       update: { value },
       create: { key, value, group: "general" },
     });
   }
+
   // Checkboxes post "on"/"" — normalize to an explicit boolean string.
-  const analyticsEnabled = bool(formData, "analytics_enabled") ? "true" : "false";
-  await prisma.setting.upsert({
-    where: { key: "analytics_enabled" },
-    update: { value: analyticsEnabled },
-    create: { key: "analytics_enabled", value: analyticsEnabled, group: "privacy" },
-  });
+  for (const key of CHECKBOX_SETTING_KEYS) {
+    const value = bool(formData, key) ? "true" : "false";
+    await prisma.setting.upsert({
+      where: { key },
+      update: { value },
+      create: {
+        key,
+        value,
+        group: key === "analytics_enabled" ? "privacy" : "general",
+      },
+    });
+  }
+
   revalidatePath("/admin/settings");
   revalidatePath("/", "layout");
   return { ok: true, message: "تنظیمات ذخیره شد." };
+}
+
+function clampNumber(value: string, min: number, max: number, fallback: number): number {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+/* ------------------------------ password ---------------------------- */
+
+/**
+ * Changes the signed-in operator's password.
+ *
+ * The current password is required (a stolen session alone must not be enough
+ * to lock the real owner out), and every *other* session is revoked so the
+ * change also evicts anyone already holding a valid cookie.
+ */
+export async function changePassword(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const user = await requireAdmin();
+
+  const current = str(formData, "current_password");
+  const next = str(formData, "new_password");
+  const confirm = str(formData, "confirm_password");
+
+  if (!current || !next || !confirm) {
+    return fail("همه فیلدها الزامی است.");
+  }
+  if (next.length < 8) {
+    return fail("رمز جدید باید حداقل ۸ کاراکتر باشد.", {
+      new_password: "حداقل ۸ کاراکتر.",
+    });
+  }
+  if (next !== confirm) {
+    return fail("تکرار رمز جدید مطابقت ندارد.", {
+      confirm_password: "با رمز جدید یکسان نیست.",
+    });
+  }
+
+  const row = await prisma.adminUser.findUnique({ where: { id: user.id } });
+  if (!row) return fail("حساب کاربری یافت نشد.");
+
+  if (!(await verifyPassword(current, row.passwordHash))) {
+    return fail("رمز فعلی نادرست است.", { current_password: "رمز فعلی نادرست است." });
+  }
+  if (await verifyPassword(next, row.passwordHash)) {
+    return fail("رمز جدید باید با رمز فعلی متفاوت باشد.", {
+      new_password: "رمز جدید با رمز فعلی یکسان است.",
+    });
+  }
+
+  await prisma.adminUser.update({
+    where: { id: user.id },
+    data: { passwordHash: await hashPassword(next) },
+  });
+
+  // Keep the session that made the change; drop every other device.
+  const token = await getSessionToken();
+  await prisma.session.deleteMany({
+    where: token ? { userId: user.id, NOT: { token } } : { userId: user.id },
+  });
+
+  revalidatePath("/admin/settings");
+  return { ok: true, message: "رمز عبور تغییر کرد و سایر نشست‌ها خارج شدند." };
 }
 
 /* --------------------------- home hero widget ---------------------- */

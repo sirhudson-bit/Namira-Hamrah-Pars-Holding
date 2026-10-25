@@ -40,7 +40,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
               name="map_embed"
               dir="ltr"
               defaultValue={settings.map_embed}
-              hint="نشانی iframe نقشه. خالی بماند، جایگزین ساده نمایش داده می‌شود."
+              hint="کد Embed گوگل‌مپ را همان‌طور که هست (کل تگ iframe) بچسبانید؛ فقط نشانی داخل src ذخیره می‌شود. در گوگل‌مپ: اشتراک‌گذاری ← Embed a map ← Copy HTML. لینک کوتاه اشتراک‌گذاری (maps.app.goo.gl) قابل نمایش در صفحه نیست. خالی بماند، جایگزین ساده نمایش داده می‌شود."
             />
           </div>
         </div>
@@ -81,6 +81,63 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
           defaultValue={settings.video_embed}
           hint="مثال: نشانی embed آپارات یا یوتیوب"
         />
+      </section>
+
+      <section className="card p-6">
+        <h2 className="heading-3 mb-1">نمایش و خوانایی</h2>
+        <p className="mb-5 text-sm text-ink-500">
+          اندازه متن و فاصله خطوط را برای کل سایت تنظیم کنید. این مقدار روی اندازه پایه
+          همه متن‌ها اثر می‌گذارد (بازه ۱۴ تا ۱۸ پیکسل) و فاصله خطوط روی پاراگراف‌ها و
+          فهرست‌ها اعمال می‌شود.
+        </p>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field
+            label="اندازه فونت پایه (پیکسل)"
+            name="font_size"
+            type="number"
+            dir="ltr"
+            min={14}
+            max={18}
+            step={1}
+            defaultValue={settings.font_size}
+            hint="پیش‌فرض ۱۶. مقادیر خارج از بازه به نزدیک‌ترین حد مجاز اصلاح می‌شوند."
+          />
+          <Field
+            label="فاصله بین خطوط"
+            name="line_height"
+            type="number"
+            dir="ltr"
+            min={1.4}
+            max={2.2}
+            step={0.05}
+            defaultValue={settings.line_height}
+            hint="ضریب نسبت به اندازه فونت؛ مثلاً ۱٫۷۵. بازه مجاز ۱٫۴ تا ۲٫۲."
+          />
+        </div>
+      </section>
+
+      <section className="card p-6">
+        <h2 className="heading-3 mb-1">حالت تعمیر</h2>
+        <p className="mb-5 text-sm text-ink-500">
+          با فعال کردن این گزینه، بازدیدکنندگان به‌جای صفحات سایت یک صفحه «در حال
+          به‌روزرسانی» می‌بینند. پنل مدیریت و ورود ادمین همیشه در دسترس می‌مانند و شما
+          می‌توانید سایت را در همان وضعیت پیش‌نمایش ببینید.
+        </p>
+        <div className="space-y-5">
+          <Checkbox
+            label="حالت تعمیر فعال باشد"
+            name="maintenance_mode"
+            defaultChecked={settings.maintenance_mode === "true"}
+            hint="تا زمانی که تیک نخورده باشد، سایت برای همه باز است."
+          />
+          <Textarea
+            label="پیام صفحه تعمیر"
+            name="maintenance_message"
+            defaultValue={settings.maintenance_message}
+            rows={3}
+            hint="اگر خالی بماند، پیام پیش‌فرض نمایش داده می‌شود."
+          />
+        </div>
       </section>
 
       <section className="card p-6">

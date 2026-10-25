@@ -1,21 +1,23 @@
 import type { Metadata } from "next";
 import { getSettings } from "@/server/settings";
+import { requireAdmin } from "@/server/auth";
 import { SettingsForm } from "@/components/admin/settings-form";
 import { BrandingUploader } from "@/components/admin/branding-form";
 import { LogoSizeForm } from "@/components/admin/logo-size-form";
+import { PasswordForm } from "@/components/admin/password-form";
 import { AdminPageHeader } from "@/components/admin/page-header";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "تنظیمات" };
 
 export default async function AdminSettingsPage() {
-  const settings = await getSettings();
+  const [settings, user] = await Promise.all([getSettings(), requireAdmin()]);
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <AdminPageHeader
         title="تنظیمات"
-        description="اطلاعات تماس، لوگو، شبکه‌های اجتماعی، سئو و تنظیمات حریم خصوصی. این مقادیر در تمام سایت استفاده می‌شوند."
+        description="اطلاعات تماس، لوگو، شبکه‌های اجتماعی، سئو، نمایش و حالت تعمیر. این مقادیر در تمام سایت استفاده می‌شوند."
       />
 
       <section className="card p-6">
@@ -52,6 +54,8 @@ export default async function AdminSettingsPage() {
       </section>
 
       <SettingsForm settings={settings} />
+
+      <PasswordForm email={user.email} />
     </div>
   );
 }

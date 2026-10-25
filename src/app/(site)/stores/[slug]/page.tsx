@@ -5,6 +5,7 @@ import { ExternalLink, Mail, MapPin, Phone, Store as StoreIcon } from "lucide-re
 import { getStore, getStores } from "@/server/content";
 import { PageHero } from "@/components/site/ui";
 import { STORE_KIND_LABELS } from "@/lib/store-kinds";
+import { toPersianDigits } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export default async function StorePage({
 
   const contactRows = [
     store.address ? { Icon: MapPin, label: "نشانی", value: store.address } : null,
-    store.phone ? { Icon: Phone, label: "تلفن", value: store.phone, ltr: true } : null,
+    store.phone ? { Icon: Phone, label: "تلفن", value: toPersianDigits(store.phone), ltr: true } : null,
     store.email ? { Icon: Mail, label: "ایمیل", value: store.email, ltr: true } : null,
   ].filter(Boolean) as { Icon: typeof MapPin; label: string; value: string; ltr?: boolean }[];
 

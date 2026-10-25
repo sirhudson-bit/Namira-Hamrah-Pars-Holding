@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { getSettings } from "@/server/settings";
+import { getCurrentUser } from "@/server/auth";
 import { Logo } from "@/components/site/logo";
 import { LoginForm } from "@/components/admin/login-form";
 
@@ -13,6 +15,12 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminLoginPage() {
+  // Authoritative "already signed in" check. The edge middleware only sees a
+  // cookie, which may belong to a revoked or expired session, so the redirect
+  // belongs here, next to the database lookup.
+  const user = await getCurrentUser();
+  if (user) redirect("/admin/dashboard");
+
   const settings = await getSettings();
 
   return (

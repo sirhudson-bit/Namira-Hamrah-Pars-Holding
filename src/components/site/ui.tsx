@@ -78,7 +78,10 @@ export async function PageHero({
               {kicker}
             </p>
           ) : null}
-          <h1 className="display-1 mt-5 max-w-4xl text-white">{heading}</h1>
+          {/* ink-900, not white: this hero sits on the themed page canvas, which
+              is light in light mode — a hard-coded white heading disappeared
+              there. */}
+          <h1 className="display-1 mt-5 max-w-4xl text-ink-900">{heading}</h1>
           {lead ? (
             <p className="mt-6 max-w-2xl text-base leading-9 text-ink-500">{lead}</p>
           ) : null}
@@ -114,7 +117,7 @@ export function SectionHeading({
           {eyebrow}
         </p>
       ) : null}
-      <h2 className="display-2 mt-4 text-white">{title}</h2>
+      <h2 className="display-2 mt-4 text-ink-900">{title}</h2>
       {description ? (
         <p className="mt-4 text-base leading-9 text-ink-500">{description}</p>
       ) : null}

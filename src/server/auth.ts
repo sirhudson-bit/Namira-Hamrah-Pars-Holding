@@ -60,6 +60,17 @@ export async function destroySession(): Promise<void> {
 }
 
 /**
+ * The raw session token of the current request, if any.
+ *
+ * Exposed so a password change can revoke every *other* session while keeping
+ * the operator signed in on the device they are using.
+ */
+export async function getSessionToken(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return cookieStore.get(COOKIE_NAME)?.value ?? null;
+}
+
+/**
  * Reads and validates the session cookie. Returns null when absent/expired.
  *
  * Cached per request so the layout, a page and any server action in the same

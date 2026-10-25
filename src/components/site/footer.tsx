@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { FOOTER_NAV } from "@/lib/site";
-import { currentJalaliYear } from "@/lib/format";
+import { currentJalaliYear, toLatinDigits } from "@/lib/format";
 import { Logo } from "@/components/site/logo";
 import { CookieSettingsButton } from "@/components/site/cookie-consent";
 import {
@@ -44,7 +44,7 @@ export function Footer({ settings }: { settings: SiteSettings }) {
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="h-4 w-4 shrink-0 text-accent" aria-hidden />
-                <a href={`tel:${settings.phone}`} dir="ltr" className="hover:text-accent">
+                <a href={`tel:${toLatinDigits(settings.phone)}`} dir="ltr" className="hover:text-accent">
                   {settings.phone}
                 </a>
               </li>

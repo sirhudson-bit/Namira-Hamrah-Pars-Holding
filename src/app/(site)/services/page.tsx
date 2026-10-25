@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Phone } from "lucide-react";
 import { getServices, getStores } from "@/server/content";
 import { getSettings } from "@/server/settings";
+import { toLatinDigits } from "@/lib/format";
 import { PageHero, SectionHeading } from "@/components/site/ui";
 import { IconByName } from "@/components/site/icon";
 import { Stagger, StaggerItem } from "@/components/motion/reveal";
@@ -75,7 +76,7 @@ export default async function ServicesPage() {
           <div className="grid gap-5 sm:grid-cols-3">
             <div className="card p-6">
               <h3 className="heading-3">تلفن</h3>
-              <a href={`tel:${settings.phone}`} dir="ltr" className="mt-2 block text-accent">
+              <a href={`tel:${toLatinDigits(settings.phone)}`} dir="ltr" className="mt-2 block text-accent">
                 {settings.phone}
               </a>
               <p className="mt-2 text-xs text-ink-500">{settings.hours}</p>

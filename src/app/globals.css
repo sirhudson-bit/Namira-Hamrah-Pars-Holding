@@ -136,13 +136,27 @@
   --accent: 127 184 170;
   --accent-strong: 169 220 207;
   --line-200: rgba(255, 255, 255, 0.09);
+  /* Surfaces too, not just ink: a `.card` or `.btn-secondary` placed inside a
+     band would otherwise keep the light-theme white surface while inheriting
+     the band's light ink — white text on white. */
+  --surface: 18 26 24;
+  --surface-50: 11 15 14;
   --surface-100: 22 33 30;
   --surface-200: 27 42 38;
   color: rgb(var(--ink-900));
 }
 
 @layer base {
+  /**
+   * Reading size, set from /admin/settings → «نمایش و خوانایی».
+   *
+   * The root size is scaled rather than each text class, because every
+   * Tailwind type step is `rem`-based: one variable then resizes the whole
+   * site coherently, and the fallback keeps the default 16px when the row is
+   * missing.
+   */
   html {
+    font-size: var(--site-font-size, 16px);
     scroll-behavior: smooth;
     /* Anchor jumps clear the sticky header. */
     scroll-padding-top: 6rem;
@@ -158,6 +172,19 @@
     );
     background-repeat: no-repeat;
     transition: background-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /**
+   * Line-height control, scoped to running copy.
+   *
+   * Tailwind's `leading-*` utilities are single-class selectors (0,1,0), so a
+   * class+element selector (0,1,1) here outranks them even though `@layer base`
+   * is emitted first — specificity, not source order, decides. Headings,
+   * buttons and navigation keep their own tight leading because they are not
+   * in the list.
+   */
+  .site-copy :is(p, li, dd, blockquote, figcaption, td) {
+    line-height: var(--site-line-height, 1.75);
   }
 
   /* Accessible, high-contrast focus indicator on every interactive element. */

@@ -83,7 +83,9 @@ export default async function AboutPage() {
           <dl className="grid grid-cols-2 gap-8 lg:grid-cols-4">
             {STATS.map((s, i) => (
               <Reveal key={s.label} delay={i * 0.07}>
-                <dd className="text-4xl font-extrabold text-white sm:text-5xl">
+                {/* ink-900 keeps the number readable on the themed `panel`
+                    surface, which is white in light mode. */}
+                <dd className="text-4xl font-extrabold text-ink-900 sm:text-5xl">
                   <Counter value={s.value} suffix={s.suffix} />
                 </dd>
                 <dt className="mt-2 text-[13px] text-ink-500">{s.label}</dt>
@@ -240,7 +242,7 @@ export default async function AboutPage() {
       <section className="panel section">
         <div className="container flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
           <div className="max-w-2xl">
-            <h2 className="display-2 text-white">با نامیرا همراه شوید</h2>
+            <h2 className="display-2 text-ink-900">با نامیرا همراه شوید</h2>
             <p className="mt-4 leading-8 text-ink-500">
               برای همکاری تجاری، تأمین کالا یا پیوستن به تیم راهبری، با ما در تماس باشید.
             </p>

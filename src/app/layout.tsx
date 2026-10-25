@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import { getSettings, DEFAULT_SETTINGS } from "@/server/settings";
 import { SITE_URL } from "@/lib/site";
 import {
@@ -38,11 +39,30 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const settings = await getSettings();
+
+  /**
+   * Reading settings, resolved once per request and handed to CSS as variables
+   * (see `html { font-size: var(--site-font-size) }` in globals.css). Rendering
+   * them inline keeps the first paint at the configured size — no flash and no
+   * extra stylesheet.
+   */
+  const typography = {
+    "--site-font-size": `${settings.font_size}px`,
+    "--site-line-height": settings.line_height,
+  } as CSSProperties;
+
   return (
-    <html lang="fa" dir="rtl" data-theme="dark" suppressHydrationWarning>
+    <html
+      lang="fa"
+      dir="rtl"
+      data-theme="dark"
+      suppressHydrationWarning
+      style={typography}
+    >
       <body>
         {/* Applies the stored theme before paint, so there is no flash. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />

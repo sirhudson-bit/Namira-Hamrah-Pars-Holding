@@ -7,6 +7,11 @@ const COOKIE_NAME = "namira_admin";
  * present — a fast, cheap redirect for anonymous visitors. The authoritative
  * check (session exists, is unexpired, belongs to a real user) happens in the
  * admin layout via requireAdmin(), which can reach the database.
+ *
+ * There is deliberately no "signed-in cookie → skip the login page" rule here:
+ * a revoked or expired cookie would bounce /admin/login → /admin/dashboard →
+ * /admin/login forever, because only the database can tell a live session from
+ * a stale one. The login page performs that check itself.
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -19,13 +24,6 @@ export function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
     url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  if (isLogin && hasCookie) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/admin/dashboard";
-    url.search = "";
     return NextResponse.redirect(url);
   }
 

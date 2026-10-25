@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { getSettings } from "@/server/settings";
+import { toLatinDigits } from "@/lib/format";
 import { PageHero } from "@/components/site/ui";
 import { ContactForm } from "@/components/site/forms";
 import { MapEmbed } from "@/components/site/map-embed";
@@ -18,7 +19,7 @@ export default async function ContactPage() {
 
   const rows = [
     { Icon: MapPin, label: "نشانی", value: settings.address },
-    { Icon: Phone, label: "تلفن", value: settings.phone, ltr: true, href: `tel:${settings.phone}` },
+    { Icon: Phone, label: "تلفن", value: settings.phone, ltr: true, href: `tel:${toLatinDigits(settings.phone)}` },
     { Icon: Mail, label: "ایمیل", value: settings.email, ltr: true, href: `mailto:${settings.email}` },
     { Icon: Clock, label: "ساعات کاری", value: settings.hours },
   ];

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { ArrowLeft, ArrowUpRight, Menu, Phone, X } from "lucide-react";
 import { MAIN_NAV } from "@/lib/site";
+import { toLatinDigits } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/site/logo";
 import { EASE } from "@/components/motion/reveal";
@@ -53,7 +54,7 @@ export function Header({ settings }: { settings: HeaderSettings }) {
         <div className="container flex h-9 items-center justify-between text-[11px] text-ink-500">
           <span>{settings.hours}</span>
           <a
-            href={`tel:${settings.phone}`}
+            href={`tel:${toLatinDigits(settings.phone)}`}
             className="inline-flex items-center gap-1.5 transition-colors hover:text-accent"
           >
             <Phone className="h-3 w-3" aria-hidden />

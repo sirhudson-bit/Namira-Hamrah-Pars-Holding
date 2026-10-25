@@ -16,6 +16,8 @@ export function LoginForm() {
         <label htmlFor="email" className="label">
           ایمیل
         </label>
+        {/* A sample address, never the real administrator's: the login page is
+            public and a placeholder is not a hint for attackers. */}
         <input
           id="email"
           name="email"
@@ -24,7 +26,7 @@ export function LoginForm() {
           required
           autoComplete="username"
           className="input"
-          placeholder="admin@namiragroup.ir"
+          placeholder="name@example.com"
         />
       </div>
       <div>
