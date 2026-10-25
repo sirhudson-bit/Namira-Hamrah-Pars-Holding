@@ -322,8 +322,19 @@
   }
   .display-2 {
     @apply text-2xl font-bold tracking-tight text-ink-900 sm:text-4xl lg:text-[3rem];
-    /* Requested value: 3.5rem (56px) — a comfortable 1.17 for the 3rem size. */
-    line-height: 3.5rem;
+    /* Phones run this heading at 1.5rem, where 3.5rem leading reads as
+       double-spacing; the requested 3.5rem applies from the `sm` size up. */
+    line-height: 2.25rem;
+  }
+  /**
+   * Doubling the class is deliberate: `@apply`-ed `sm:text-4xl` also carries a
+   * line-height, and Tailwind emits that variant wherever it likes inside the
+   * layer. (0,2,0) wins regardless of source order.
+   */
+  @media (min-width: 640px) {
+    .display-2.display-2 {
+      line-height: 3.5rem;
+    }
   }
   .display-3 {
     @apply text-xl font-bold tracking-tight text-ink-900 sm:text-2xl lg:text-3xl;
