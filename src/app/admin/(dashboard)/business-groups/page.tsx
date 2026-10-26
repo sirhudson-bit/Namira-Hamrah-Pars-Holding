@@ -80,6 +80,19 @@ function groupFields(g?: BusinessGroup): FieldSpec[] {
       defaultValue: g?.ctaUrl,
     },
     {
+      type: "image",
+      name: "image",
+      label: "تصویر گروه",
+      hint: "روی کارت گروه در صفحه اصلی، صفحه گروه‌ها و بالای صفحه اختصاصی نمایش داده می‌شود.",
+      defaultValue: g?.image,
+    },
+    {
+      type: "text",
+      name: "imageAlt",
+      label: "متن جایگزین تصویر",
+      defaultValue: g?.imageAlt,
+    },
+    {
       type: "checkbox",
       name: "published",
       label: "منتشر شده",

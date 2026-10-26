@@ -14,6 +14,7 @@ export const ADMIN_NAV: { section: string; items: AdminNavItem[] }[] = [
     items: [
       { label: "صفحه اصلی", href: "/admin/home", icon: "home" },
       { label: "صفحات", href: "/admin/pages", icon: "pages" },
+      { label: "چیدمان صفحات", href: "/admin/layout", icon: "layout" },
       { label: "گروه‌های کسب‌وکار", href: "/admin/business-groups", icon: "groups" },
       { label: "فروشگاه‌ها", href: "/admin/stores", icon: "stores" },
       { label: "اخبار", href: "/admin/news", icon: "news" },

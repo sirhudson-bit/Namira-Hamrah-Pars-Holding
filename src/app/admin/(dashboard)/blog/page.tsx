@@ -38,6 +38,13 @@ function blogFields(p?: BlogPost): FieldSpec[] {
       defaultValue: p?.excerpt,
     },
     {
+      type: "image",
+      name: "image",
+      label: "تصویر شاخص",
+      hint: "روی کارت مقاله و بالای متن مقاله نمایش داده می‌شود.",
+      defaultValue: p?.image,
+    },
+    {
       type: "markdown",
       name: "body",
       label: "متن مقاله",

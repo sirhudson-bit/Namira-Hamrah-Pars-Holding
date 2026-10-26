@@ -4,8 +4,11 @@ import Image from "next/image";
 import { ArrowLeft, Video } from "lucide-react";
 import { getNews, getBlogPosts } from "@/server/content";
 import { getSettings } from "@/server/settings";
+import { prisma } from "@/server/db";
 import { formatJalaliLong } from "@/lib/format";
+import { PageBuilder } from "@/components/site/page-builder";
 import { PageHero, SectionHeading } from "@/components/site/ui";
+import { SiteImage } from "@/components/site/site-image";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +18,15 @@ export const metadata: Metadata = {
 };
 
 export default async function MediaPage() {
-  const [news, posts, settings] = await Promise.all([
+  const [news, posts, settings, gallery] = await Promise.all([
     getNews(3),
     getBlogPosts(3),
     getSettings(),
+    prisma.mediaAsset.findMany({
+      where: { inGallery: true },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+    }),
   ]);
 
   return (
@@ -30,6 +38,8 @@ export default async function MediaPage() {
         description="رویدادها، همکاری‌ها، تحلیل‌ها و محتوای تخصصی هلدینگ."
         breadcrumb={[{ label: "رسانه" }]}
       />
+      <PageBuilder slug="media" />
+
 
       {/* News */}
       <section className="section">
@@ -49,7 +59,11 @@ export default async function MediaPage() {
                 className="group card overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lift"
               >
                 <div className="relative h-40 bg-gradient-to-br from-brand-600 to-dark-800">
-                  <Image src="/images/news-placeholder.svg" alt="" fill className="object-cover opacity-70" sizes="33vw" />
+                  {n.image ? (
+                    <SiteImage src={n.image} alt={n.title} className="h-full w-full object-cover" />
+                  ) : (
+                    <Image src="/images/news-placeholder.svg" alt="" fill className="object-cover opacity-70" sizes="33vw" />
+                  )}
                 </div>
                 <div className="p-6">
                   <span className="badge">{n.category}</span>
@@ -99,19 +113,34 @@ export default async function MediaPage() {
       <section id="gallery" className="section scroll-mt-24">
         <div className="container">
           <SectionHeading eyebrow="گالری" title="تصاویر رویدادها و مجموعه" />
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="relative aspect-square overflow-hidden rounded-card bg-surface-50">
-                <Image
-                  src="/images/news-placeholder.svg"
-                  alt={`تصویر گالری شماره ${i + 1}`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                />
-              </div>
-            ))}
-          </div>
+          {gallery.length === 0 ? (
+            <div className="card p-10 text-center text-sm text-ink-500">
+              هنوز تصویری در گالری منتشر نشده است. تصاویر از پنل مدیریت ← رسانه اضافه می‌شوند.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              {gallery.map((asset) => (
+                <a
+                  key={asset.id}
+                  href={asset.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative aspect-square overflow-hidden rounded-card border border-line-200 bg-surface-50"
+                >
+                  <SiteImage
+                    src={asset.path}
+                    alt={asset.alt || asset.title || asset.filename}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  {asset.title ? (
+                    <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-dark-900/85 to-transparent px-3 pb-2 pt-6 text-[11px] text-white">
+                      {asset.title}
+                    </span>
+                  ) : null}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

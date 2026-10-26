@@ -6,6 +6,7 @@ import { getStore, getStores } from "@/server/content";
 import { PageHero } from "@/components/site/ui";
 import { STORE_KIND_LABELS } from "@/lib/store-kinds";
 import { toPersianDigits } from "@/lib/format";
+import { SiteImage } from "@/components/site/site-image";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,11 @@ export default async function StorePage({
       <section className="section">
         <div className="container grid gap-12 lg:grid-cols-[1.6fr_1fr]">
           <div>
+            {store.image ? (
+              <div className="mb-7 aspect-[16/9] overflow-hidden rounded-card border border-line-200 bg-surface-50">
+                <SiteImage src={store.image} alt={store.name} className="h-full w-full object-cover" />
+              </div>
+            ) : null}
             <span className="flex h-16 w-16 items-center justify-center rounded-card bg-brand-700/20 text-accent">
               <StoreIcon className="h-8 w-8" aria-hidden />
             </span>

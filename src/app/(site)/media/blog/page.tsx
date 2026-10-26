@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getBlogPosts } from "@/server/content";
 import { formatJalaliLong } from "@/lib/format";
 import { PageHero, EmptyState } from "@/components/site/ui";
+import { SiteImage } from "@/components/site/site-image";
 
 export const dynamic = "force-dynamic";
 
@@ -33,8 +34,14 @@ export default async function BlogListPage() {
                 <Link
                   key={p.id}
                   href={`/media/blog/${p.slug}`}
-                  className="group card flex flex-col p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lift"
+                  className="group card flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lift"
                 >
+                  {p.image ? (
+                    <div className="relative h-44 border-b border-line-200 bg-surface-50">
+                      <SiteImage src={p.image} alt={p.title} className="h-full w-full object-cover" />
+                    </div>
+                  ) : null}
+                  <div className="flex flex-1 flex-col p-6">
                   <span className="badge w-fit">{p.category}</span>
                   <h2 className="mt-3 text-base font-bold leading-7 text-ink-900 group-hover:text-accent">
                     {p.title}
@@ -43,6 +50,7 @@ export default async function BlogListPage() {
                   <div className="mt-4 flex items-center justify-between text-xs text-ink-500">
                     <span>{p.author}</span>
                     <time dateTime={p.publishedAt.toISOString()}>{formatJalaliLong(p.publishedAt)}</time>
+                  </div>
                   </div>
                 </Link>
               ))}

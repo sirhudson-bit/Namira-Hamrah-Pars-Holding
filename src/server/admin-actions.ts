@@ -18,6 +18,8 @@ import { toPersianDigits } from "@/lib/format";
 import { extractEmbedUrl } from "@/lib/embed";
 import type { ActionResult } from "@/server/actions";
 import type { MediaItem } from "@/lib/media";
+import { isSafeImageSrc } from "@/lib/media";
+import { BLOCK_BY_TYPE, newBlockData, parseBlockData } from "@/lib/blocks";
 
 /* ----------------------------- helpers ----------------------------- */
 
@@ -31,6 +33,11 @@ function opt(formData: FormData, key: string): string | null {
 function bool(formData: FormData, key: string): boolean {
   const v = formData.get(key);
   return v === "on" || v === "true" || v === "1";
+}
+/** An image value that is safe to render; anything else stores as "". */
+function img(formData: FormData, key: string): string {
+  const v = str(formData, key);
+  return isSafeImageSrc(v) ? v : "";
 }
 function num(formData: FormData, key: string, fallback = 0): number {
   const v = Number(str(formData, key));
@@ -77,6 +84,8 @@ export async function saveBusinessGroup(
     highlights: str(formData, "highlights"),
     ctaLabel: str(formData, "ctaLabel"),
     ctaUrl: str(formData, "ctaUrl"),
+    image: img(formData, "image"),
+    imageAlt: str(formData, "imageAlt").slice(0, 160),
     sortOrder: num(formData, "sortOrder"),
     published: bool(formData, "published"),
   };
@@ -135,6 +144,7 @@ export async function saveStore(
     phone: opt(formData, "phone"),
     address: opt(formData, "address"),
     email: opt(formData, "email"),
+    image: img(formData, "image"),
     sortOrder: num(formData, "sortOrder"),
     published: bool(formData, "published"),
   };
@@ -188,6 +198,7 @@ export async function saveNews(
   const data = {
     ...parsed.data,
     body: str(formData, "body"),
+    image: img(formData, "image"),
     published: bool(formData, "published"),
     publishedAt: dateStr ? new Date(dateStr) : new Date(),
   };
@@ -244,6 +255,7 @@ export async function saveBlogPost(
   const data = {
     ...parsed.data,
     body: str(formData, "body"),
+    image: img(formData, "image"),
     published: bool(formData, "published"),
     publishedAt: dateStr ? new Date(dateStr) : new Date(),
   };
@@ -298,6 +310,7 @@ export async function saveJob(
     location: opt(formData, "location") ?? "تهران",
     type: opt(formData, "type") ?? "تمام‌وقت",
     requirements: str(formData, "requirements"),
+    image: img(formData, "image"),
     sortOrder: num(formData, "sortOrder"),
     active: bool(formData, "active"),
   };
@@ -335,6 +348,7 @@ export async function savePage(
     eyebrow: opt(formData, "eyebrow"),
     subtitle: opt(formData, "subtitle"),
     body: str(formData, "body"),
+    image: img(formData, "image"),
     seoTitle: opt(formData, "seoTitle"),
     seoDesc: opt(formData, "seoDesc"),
     published: bool(formData, "published"),
@@ -708,6 +722,7 @@ export async function uploadMedia(
   });
 
   revalidatePath("/admin/media");
+  revalidatePath("/media");
   return { ok: true, message: "فایل رسانه بارگذاری شد." };
 }
 
@@ -721,6 +736,7 @@ export async function deleteMedia(formData: FormData): Promise<void> {
     await prisma.mediaAsset.delete({ where: { id } });
   }
   revalidatePath("/admin/media");
+  revalidatePath("/media");
 }
 
 /** Latest media assets, for the editor's image picker. */
@@ -873,4 +889,247 @@ export async function removeBrandAsset(formData: FormData): Promise<void> {
 
   revalidatePath("/admin/settings");
   revalidatePath("/", "layout");
+}
+
+/* --------------------------- media asset edit ---------------------- */
+
+/** True when any editable content still points at this upload. */
+async function mediaInUse(value: string): Promise<boolean> {
+  if (!value) return false;
+  const [pages, news, blog, blocks, groups, stores, jobs, banners] = await Promise.all([
+    prisma.page.count({ where: { body: { contains: value } } }),
+    prisma.newsPost.count({ where: { body: { contains: value } } }),
+    prisma.blogPost.count({ where: { body: { contains: value } } }),
+    prisma.pageBlock.count({ where: { data: { contains: value } } }),
+    prisma.businessGroup.count({ where: { image: value } }),
+    prisma.store.count({ where: { image: value } }),
+    prisma.jobOpening.count({ where: { image: value } }),
+    prisma.homeBanner.count({ where: { image: value } }),
+  ]);
+  return pages + news + blog + blocks + groups + stores + jobs + banners > 0;
+}
+
+/**
+ * Updates an asset's metadata and, optionally, replaces its file.
+ *
+ * The old file is only removed when nothing references it any more — an image
+ * swapped on one card must not break a news article that embedded it.
+ */
+export async function saveMediaAsset(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const id = str(formData, "id");
+  const asset = id ? await prisma.mediaAsset.findUnique({ where: { id } }) : null;
+  if (!asset) return fail("فایل مورد نظر یافت نشد.");
+
+  const file = formData.get("file");
+  let nextPath = asset.path;
+  let nextMime = asset.mime;
+  let nextSize = asset.size;
+  let nextFilename = asset.filename;
+
+  if (file instanceof File && file.size > 0) {
+    if (file.size > MAX_MEDIA_BYTES) return fail("حجم فایل باید کمتر از ۵ مگابایت باشد.");
+    if (!ALLOWED_MEDIA.has(file.type)) {
+      return fail("فقط تصاویر PNG، JPEG، WEBP، SVG و GIF مجاز هستند.");
+    }
+    const rawExt = file.name.split(".").pop()?.toLowerCase().slice(0, 8) ?? "bin";
+    const stored = await toWebp(Buffer.from(await file.arrayBuffer()), file.type, rawExt);
+    const filename = `${randomUUID()}.${stored.ext}`;
+    const dir = path.join(process.cwd(), "public", "uploads", "media");
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, filename), stored.data);
+
+    const oldPath = asset.path;
+    nextPath = `/uploads/media/${filename}`;
+    nextMime = stored.ext === "webp" ? "image/webp" : file.type;
+    nextSize = stored.data.length;
+    nextFilename = file.name.slice(0, 200);
+
+    if (!(await mediaInUse(oldPath))) {
+      const rel = oldPath.replace(/^\//, "");
+      await unlink(path.join(process.cwd(), "public", rel)).catch(() => {});
+    }
+  }
+
+  await prisma.mediaAsset.update({
+    where: { id },
+    data: {
+      alt: str(formData, "alt").slice(0, 200),
+      title: str(formData, "title").slice(0, 200),
+      inGallery: bool(formData, "inGallery"),
+      path: nextPath,
+      mime: nextMime,
+      size: nextSize,
+      filename: nextFilename,
+    },
+  });
+
+  revalidatePath("/admin/media");
+  revalidatePath("/media");
+  return { ok: true, message: "اطلاعات تصویر ذخیره شد." };
+}
+
+/* ---------------------------- home banners ------------------------- */
+
+/** Only internal paths or absolute http(s) links are accepted. */
+function safeHref(value: string): string {
+  const v = value.trim();
+  if (/^\/(?!\/)/.test(v) || /^https?:\/\//i.test(v)) return v;
+  return "";
+}
+
+export async function saveBanner(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const title = str(formData, "title");
+  const image = img(formData, "image");
+  if (!title) return fail("عنوان بنر الزامی است.");
+  if (!image) return fail("تصویر بنر الزامی است. از کتابخانه رسانه انتخاب کنید.");
+
+  const data = {
+    title,
+    subtitle: str(formData, "subtitle"),
+    image,
+    imageAlt: str(formData, "imageAlt").slice(0, 160),
+    href: safeHref(str(formData, "href")),
+    ctaLabel: str(formData, "ctaLabel"),
+    sortOrder: num(formData, "sortOrder"),
+    active: bool(formData, "active"),
+  };
+  const id = str(formData, "id");
+  if (id) await prisma.homeBanner.update({ where: { id }, data });
+  else await prisma.homeBanner.create({ data });
+
+  revalidatePath("/");
+  revalidatePath("/admin/home");
+  return { ok: true, message: "بنر ذخیره شد." };
+}
+
+export async function deleteBanner(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await prisma.homeBanner.delete({ where: { id: str(formData, "id") } }).catch(() => {});
+  revalidatePath("/");
+  revalidatePath("/admin/home");
+}
+
+/* ---------------------------- page builder ------------------------- */
+
+/** Revalidates the public route a block belongs to. */
+function revalidatePageSlug(pageSlug: string): void {
+  revalidatePath(pageSlug === "home" ? "/" : `/${pageSlug}`);
+  revalidatePath("/admin/layout");
+}
+
+export async function addBlock(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const pageSlug = str(formData, "pageSlug");
+  const type = str(formData, "type");
+  if (!/^[a-z-]{2,40}$/.test(pageSlug) || !BLOCK_BY_TYPE[type]) return;
+
+  const last = await prisma.pageBlock.findFirst({
+    where: { pageSlug },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+
+  await prisma.pageBlock.create({
+    data: {
+      pageSlug,
+      type,
+      data: newBlockData(type),
+      sortOrder: (last?.sortOrder ?? 0) + 10,
+    },
+  });
+  revalidatePageSlug(pageSlug);
+}
+
+export async function saveBlock(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const id = str(formData, "id");
+  const block = id ? await prisma.pageBlock.findUnique({ where: { id } }) : null;
+  if (!block) return fail("ابزارک یافت نشد.");
+
+  const def = BLOCK_BY_TYPE[block.type];
+  if (!def) return fail("نوع ابزارک نامعتبر است.");
+
+  const data: Record<string, string> = { ...parseBlockData(block.data) };
+  for (const field of def.fields) {
+    const raw = str(formData, `data_${field.name}`);
+    if (field.type === "image") {
+      data[field.name] = isSafeImageSrc(raw) ? raw : "";
+    } else if (field.type === "number") {
+      const n = Number(raw);
+      data[field.name] = Number.isFinite(n)
+        ? String(Math.min(200, Math.max(0, Math.round(n))))
+        : "";
+    } else {
+      data[field.name] = raw;
+    }
+  }
+
+  await prisma.pageBlock.update({
+    where: { id },
+    data: { data: JSON.stringify(data), visible: bool(formData, "visible") },
+  });
+  revalidatePageSlug(block.pageSlug);
+  return { ok: true, message: "ابزارک ذخیره شد." };
+}
+
+export async function deleteBlock(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = str(formData, "id");
+  const block = await prisma.pageBlock.findUnique({ where: { id } });
+  if (!block) return;
+  await prisma.pageBlock.delete({ where: { id } });
+  revalidatePageSlug(block.pageSlug);
+}
+
+/** Swaps sortOrder with the neighbouring block (up = smaller order). */
+export async function moveBlock(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = str(formData, "id");
+  const direction = str(formData, "direction") === "up" ? "up" : "down";
+  const block = await prisma.pageBlock.findUnique({ where: { id } });
+  if (!block) return;
+
+  const neighbour = await prisma.pageBlock.findFirst({
+    where: {
+      pageSlug: block.pageSlug,
+      sortOrder: direction === "up" ? { lt: block.sortOrder } : { gt: block.sortOrder },
+    },
+    orderBy: { sortOrder: direction === "up" ? "desc" : "asc" },
+  });
+  if (!neighbour) return;
+
+  await prisma.$transaction([
+    prisma.pageBlock.update({
+      where: { id: block.id },
+      data: { sortOrder: neighbour.sortOrder },
+    }),
+    prisma.pageBlock.update({
+      where: { id: neighbour.id },
+      data: { sortOrder: block.sortOrder },
+    }),
+  ]);
+  revalidatePageSlug(block.pageSlug);
+}
+
+export async function toggleBlock(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = str(formData, "id");
+  const block = await prisma.pageBlock.findUnique({ where: { id } });
+  if (!block) return;
+  await prisma.pageBlock.update({
+    where: { id },
+    data: { visible: !block.visible },
+  });
+  revalidatePageSlug(block.pageSlug);
 }

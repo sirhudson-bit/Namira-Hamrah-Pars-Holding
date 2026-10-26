@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import type { ActionResult } from "@/server/actions";
 import { Field, Textarea, Select, Checkbox, FormFeedback, SubmitBar } from "@/components/admin/fields";
 import { MarkdownEditor } from "@/components/admin/markdown-editor";
+import { ImageField } from "@/components/admin/image-field";
 
 export type FieldSpec =
   | {
@@ -49,6 +50,23 @@ export type FieldSpec =
       name: string;
       label: string;
       defaultChecked?: boolean;
+      hint?: string;
+    }
+  | {
+      /** File input used to replace an existing upload. */
+      type: "file";
+      name: string;
+      label: string;
+      accept?: string;
+      hint?: string;
+    }
+  | {
+      /** Image URL + media-library picker. */
+      type: "image";
+      name: string;
+      label: string;
+      defaultValue?: string | null;
+      required?: boolean;
       hint?: string;
     };
 
@@ -137,6 +155,37 @@ export function RecordForm({
                   name={f.name}
                   defaultChecked={f.defaultChecked}
                   hint={f.hint}
+                />
+              </div>
+            );
+          }
+          if (f.type === "file") {
+            return (
+              <div key={f.name} className={columns === 2 ? "sm:col-span-2" : undefined}>
+                <label htmlFor={f.name} className="label">
+                  {f.label}
+                </label>
+                <input
+                  id={f.name}
+                  name={f.name}
+                  type="file"
+                  accept={f.accept}
+                  className="input file:ml-3 file:rounded-btn file:border-0 file:bg-brand-700/20 file:px-3 file:py-1.5 file:text-accent"
+                />
+                {f.hint ? <p className="mt-1 text-xs text-ink-500">{f.hint}</p> : null}
+              </div>
+            );
+          }
+          if (f.type === "image") {
+            return (
+              <div key={f.name} className={columns === 2 ? "sm:col-span-2" : undefined}>
+                <ImageField
+                  label={f.label}
+                  name={f.name}
+                  defaultValue={f.defaultValue}
+                  required={f.required}
+                  hint={f.hint}
+                  error={err}
                 />
               </div>
             );

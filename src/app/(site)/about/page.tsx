@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Award, BadgeCheck, Eye, Heart, Target } from "lucide-react";
 import { getMilestones, getTeam } from "@/server/content";
 import { renderMarkdown } from "@/lib/markdown";
+import { PageBuilder } from "@/components/site/page-builder";
 import { PageHero, SectionHeading } from "@/components/site/ui";
 import { Logo } from "@/components/site/logo";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion/reveal";
@@ -76,6 +77,8 @@ export default async function AboutPage() {
         description="هویت، تاریخچه و مسیر رشد هلدینگ."
         breadcrumb={[{ label: "درباره نامیرا" }]}
       />
+      <PageBuilder slug="about" />
+
 
       {/* Animated number rail */}
       <section className="panel py-12">

@@ -46,6 +46,13 @@ function jobFields(j?: JobOpening): FieldSpec[] {
       defaultValue: j?.requirements,
     },
     {
+      type: "image",
+      name: "image",
+      label: "تصویر موقعیت",
+      hint: "کنار عنوان موقعیت در صفحه فرصت‌های شغلی نمایش داده می‌شود.",
+      defaultValue: j?.image,
+    },
+    {
       type: "checkbox",
       name: "active",
       label: "فعال (نمایش در سایت)",

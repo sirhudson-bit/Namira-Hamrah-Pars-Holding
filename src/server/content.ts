@@ -113,6 +113,7 @@ export const getPageCopy = cache(async (slug: string) => {
     title: page.title,
     description: page.subtitle,
     body: page.body,
+    image: page.image,
     seoTitle: page.seoTitle,
     seoDesc: page.seoDesc,
   };

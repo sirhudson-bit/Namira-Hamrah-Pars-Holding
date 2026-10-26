@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getBusinessGroups } from "@/server/content";
+import { PageBuilder } from "@/components/site/page-builder";
 import { PageHero } from "@/components/site/ui";
 import { IconByName } from "@/components/site/icon";
 import { Stagger, StaggerItem } from "@/components/motion/reveal";
 import { Tilt } from "@/components/motion/tilt";
+import { SiteImage } from "@/components/site/site-image";
 
 export const dynamic = "force-dynamic";
 
@@ -27,13 +29,20 @@ export default async function BusinessGroupsPage() {
         description="هر گروه با تیم، زنجیره تأمین و کانال فروش مستقل خود اداره می‌شود و از زیرساخت مشترک هلدینگ بهره می‌برد."
         breadcrumb={[{ label: "گروه‌های کسب‌وکار" }]}
       />
+      <PageBuilder slug="business-groups" />
+
 
       <section className="section">
         <Stagger className="container grid gap-6 lg:grid-cols-2">
           {groups.map((g) => (
             <StaggerItem key={g.id}>
               <Tilt intensity={5} className="h-full">
-                <article className="card flex h-full flex-col p-7">
+                <article className="card flex h-full flex-col overflow-hidden p-7">
+                  {g.image ? (
+                    <div className="-mx-7 -mt-7 mb-5 aspect-[16/9] border-b border-line-200 bg-surface-50">
+                      <SiteImage src={g.image} alt={g.imageAlt || g.name} className="h-full w-full object-cover" />
+                    </div>
+                  ) : null}
                   <div className="flex items-center gap-4">
                     <span
                       className="flex h-14 w-14 items-center justify-center rounded-btn text-white"

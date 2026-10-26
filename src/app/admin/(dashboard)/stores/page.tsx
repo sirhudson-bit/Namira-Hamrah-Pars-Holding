@@ -53,6 +53,13 @@ function storeFields(s?: Store): FieldSpec[] {
       defaultValue: s?.description,
     },
     {
+      type: "image",
+      name: "image",
+      label: "تصویر فروشگاه",
+      hint: "روی کارت کانال فروش و بالای صفحه اختصاصی نمایش داده می‌شود.",
+      defaultValue: s?.image,
+    },
+    {
       type: "checkbox",
       name: "published",
       label: "منتشر شده",

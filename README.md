@@ -171,6 +171,19 @@ activity, a site-health checklist and the contact/application inbox. The behavio
 - **`/admin/home` governs the hero widget.** Eyebrow, title, lead, both buttons, the stat lines
   (`value|label`, one per line) and an on/off switch for the animated sphere. The rail shows a live
   preview of the sphere and of the parsed stats, and saving revalidates the public home page.
+- **Home banners are CRUD content.** `/admin/home` → «بنرهای صفحه اصلی» adds any number of slides
+  (image, title, subtitle, link, CTA label, order, active). The public home renders them as an
+  accessible slider with a pause control. With no banner, the section does not render.
+- **Images are editable on every content type.** Business groups, stores, news, articles, job
+  openings, pages (hero backdrop) and media all use the shared image field: a URL box plus the
+  media-library picker and a live preview. Empty means the previous placeholder/icon layout.
+- **The media library is editable.** Each asset can be renamed (title/alt), removed from the public
+  gallery, or replaced with a new file. Replacing keeps the old file when stored content still
+  references it, so embedded images never break silently.
+- **`/admin/layout` is a page builder.** Pick a page, then add, reorder, hide or delete widgets:
+  heading, Markdown text, image, image+text split, feature cards, stats, CTA, gallery, video and
+  spacer. Widgets render below the page hero, ahead of the page's built-in content, and only the
+  chosen page is affected.
 
 ## Stack
 
@@ -267,9 +280,10 @@ Audited against the Vercel React best-practices guide. What is enforced here:
 `/careers`, `/privacy`, `/terms`, `/cookie-policy`, `/refund-policy`, plus `/sitemap.xml`,
 `/robots.txt` and `/icon.svg`.
 
-**Admin** — `/admin/login`, `/admin/dashboard`, `/admin/home`, `/admin/pages`, `/admin/business-groups`,
-`/admin/stores`, `/admin/news`, `/admin/blog`, `/admin/careers`, `/admin/forms`,
-`/admin/media`, `/admin/settings` (including the **logo + favicon upload** section).
+**Admin** — `/admin/login`, `/admin/dashboard`, `/admin/home` (hero + banners), `/admin/pages`,
+`/admin/layout` (page builder), `/admin/business-groups`, `/admin/stores`, `/admin/news`,
+`/admin/blog`, `/admin/careers`, `/admin/forms`, `/admin/media` (upload, edit, replace),
+`/admin/settings` (including the **logo + favicon upload** section).
 
 **API** — `GET /api/admin/export?type=messages|applications` (CSV),
 `GET /api/admin/resume/[id]` (auth-gated résumé download).
@@ -284,7 +298,7 @@ In `/admin/settings`, the **«لوگو و فاوآیکون»** section uploads:
 | Light logo | Reserved for dark surfaces (optional) |
 | Favicon | Browser tab / bookmarks via the root metadata; falls back to `/icon.svg` |
 
-Uploads are limited to PNG/SVG/WEBP/JPG/ICO and 2 MB, are written to
+Uploads are limited to PNG/SVG/WEBP/JPG/ICO and 2 MB (page backdrops 8 MB), are written to
 `public/uploads/branding/`, replace the previous file (so nothing accumulates), and are read
 back through `getSettings()`.
 

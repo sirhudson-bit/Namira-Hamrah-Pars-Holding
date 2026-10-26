@@ -5,6 +5,7 @@ import { ArrowLeft, Check } from "lucide-react";
 import { getBusinessGroup, getBusinessGroups, getStores } from "@/server/content";
 import { PageHero } from "@/components/site/ui";
 import { IconByName } from "@/components/site/icon";
+import { SiteImage } from "@/components/site/site-image";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,11 @@ export default async function BusinessGroupPage({
       <section className="section">
         <div className="container grid gap-12 lg:grid-cols-[1.6fr_1fr]">
           <div>
+            {group.image ? (
+              <div className="mb-7 aspect-[16/9] overflow-hidden rounded-card border border-line-200 bg-surface-50">
+                <SiteImage src={group.image} alt={group.imageAlt || group.name} className="h-full w-full object-cover" />
+              </div>
+            ) : null}
             <div className="flex items-center gap-4">
               <span
                 className="flex h-16 w-16 items-center justify-center rounded-card text-white"

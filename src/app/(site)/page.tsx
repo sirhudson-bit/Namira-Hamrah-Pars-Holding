@@ -30,6 +30,9 @@ import { Counter } from "@/components/motion/counter";
 import { Tilt } from "@/components/motion/tilt";
 import { Marquee } from "@/components/motion/marquee";
 import { VideoModalTrigger } from "@/components/site/video-modal";
+import { HomeBanners } from "@/components/site/home-banners";
+import { PageBuilder } from "@/components/site/page-builder";
+import { SiteImage } from "@/components/site/site-image";
 import KineticGrid from "@/components/ui/kinetic-grid";
 
 export const dynamic = "force-dynamic";
@@ -153,6 +156,10 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Admin-managed promo banners, then widgets placed in /admin/layout. */}
+      <HomeBanners />
+      <PageBuilder slug="home" />
+
       {/* ------------------------------------------------------------ Marquee */}
       <div className="panel overflow-hidden py-5">
         <Marquee
@@ -224,6 +231,11 @@ export default async function HomePage() {
                 >
                   <Tilt className="group h-full" intensity={5}>
                     <article className="card relative flex h-full flex-col overflow-hidden p-6 shadow-lift transition-all duration-300 ease-smooth hover:-translate-y-1 hover:border-brand-500/40">
+                      {g.image ? (
+                        <div className="-mx-6 -mt-6 mb-5 aspect-[16/9] overflow-hidden border-b border-line-200 bg-surface-50">
+                          <SiteImage src={g.image} alt={g.imageAlt || g.name} className="h-full w-full object-cover" />
+                        </div>
+                      ) : null}
                       <div className="flex items-center justify-between">
                         <span
                           className="flex h-12 w-12 items-center justify-center rounded-xl text-white"
@@ -445,13 +457,21 @@ export default async function HomePage() {
                     className="card group flex h-full flex-col overflow-hidden transition-all duration-300 ease-smooth hover:-translate-y-1 hover:border-brand-500/40"
                   >
                     <div className="relative h-40 overflow-hidden bg-gradient-to-br from-brand-700 to-dark-900">
-                      <Image
-                        src="/images/news-placeholder.svg"
-                        alt=""
-                        fill
-                        className="object-cover opacity-60"
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                      />
+                      {n.image ? (
+                        <SiteImage
+                          src={n.image}
+                          alt={n.title}
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Image
+                          src="/images/news-placeholder.svg"
+                          alt=""
+                          fill
+                          className="object-cover opacity-60"
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                        />
+                      )}
                     </div>
                     <div className="flex flex-1 flex-col p-6">
                       <span className="badge w-fit">{n.category}</span>

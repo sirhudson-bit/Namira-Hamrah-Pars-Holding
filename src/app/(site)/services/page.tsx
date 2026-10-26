@@ -4,6 +4,7 @@ import { ArrowLeft, Phone } from "lucide-react";
 import { getServices, getStores } from "@/server/content";
 import { getSettings } from "@/server/settings";
 import { toLatinDigits } from "@/lib/format";
+import { PageBuilder } from "@/components/site/page-builder";
 import { PageHero, SectionHeading } from "@/components/site/ui";
 import { IconByName } from "@/components/site/icon";
 import { Stagger, StaggerItem } from "@/components/motion/reveal";
@@ -32,6 +33,8 @@ export default async function ServicesPage() {
         description="از ضمانت اصالت کالا تا پیگیری سفارش و پاسخ‌گویی پس از فروش؛ خدمات نامیرا پس از پرداخت تمام نمی‌شود."
         breadcrumb={[{ label: "خدمات" }]}
       />
+      <PageBuilder slug="services" />
+
 
       <section className="section">
         <Stagger className="container grid gap-6 md:grid-cols-2">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Building2, Users } from "lucide-react";
 import { getOrgUnits } from "@/server/content";
+import { PageBuilder } from "@/components/site/page-builder";
 import { PageHero, SectionHeading } from "@/components/site/ui";
 import { Stagger, StaggerItem, Reveal } from "@/components/motion/reveal";
 
@@ -34,6 +35,8 @@ export default async function UnitsPage() {
         description="واحدهای عملیاتی، بازرگانی و پشتیبان هلدینگ به‌صورت یکپارچه با گروه‌های کسب‌وکار همکاری می‌کنند."
         breadcrumb={[{ label: "واحدهای سازمانی" }]}
       />
+      <PageBuilder slug="units" />
+
 
       <section className="section">
         <div className="container">

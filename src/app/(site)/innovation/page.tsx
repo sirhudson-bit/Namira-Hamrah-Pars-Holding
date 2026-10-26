@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Cpu, Lightbulb, Rocket, Users } from "lucide-react";
 import { getInnovationProjects } from "@/server/content";
+import { PageBuilder } from "@/components/site/page-builder";
 import { PageHero, SectionHeading } from "@/components/site/ui";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion/reveal";
 import { Labs3D } from "@/components/three/labs-3d";
@@ -33,6 +34,8 @@ export default async function InnovationPage() {
         description="بازوی فناورانه هلدینگ؛ جایی که داده‌های فروش به تصمیم، و ایده‌های محصول به سرویس تبدیل می‌شوند."
         breadcrumb={[{ label: "نوآوری و هوش مصنوعی" }]}
       />
+      <PageBuilder slug="innovation" />
+
 
       <section className="section">
         <div className="container grid gap-12 lg:grid-cols-2 lg:items-start">

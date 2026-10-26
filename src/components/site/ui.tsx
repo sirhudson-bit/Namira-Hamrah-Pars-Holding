@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/motion/reveal";
 import { getPageCopy } from "@/server/content";
 import { getSettings } from "@/server/settings";
+import { imageSrc } from "@/lib/media";
 
 export function Breadcrumb({ items }: { items: { label: string; href?: string }[] }) {
   return (
@@ -59,7 +60,8 @@ export async function PageHero({
   const kicker = copy?.eyebrow || eyebrow;
   const heading = copy?.title || title;
   const lead = copy?.description || description;
-  const backdrop = settings.page_hero_bg;
+  // A page-level backdrop wins over the site-wide one set in /admin/settings.
+  const backdrop = imageSrc(copy?.image) || settings.page_hero_bg;
 
   return (
     <section

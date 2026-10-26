@@ -37,6 +37,13 @@ function newsFields(n?: NewsPost): FieldSpec[] {
       defaultValue: n?.excerpt,
     },
     {
+      type: "image",
+      name: "image",
+      label: "تصویر شاخص",
+      hint: "روی کارت خبر در صفحه اصلی و صفحه رسانه، و بالای متن خبر نمایش داده می‌شود.",
+      defaultValue: n?.image,
+    },
+    {
       type: "markdown",
       name: "body",
       label: "متن خبر",

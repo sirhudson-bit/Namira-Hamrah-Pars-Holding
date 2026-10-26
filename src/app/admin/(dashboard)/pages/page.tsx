@@ -42,6 +42,7 @@ function pageFields(p: {
   eyebrow: string | null;
   subtitle: string | null;
   body: string;
+  image: string;
   seoTitle: string | null;
   seoDesc: string | null;
   published: boolean;
@@ -61,6 +62,13 @@ function pageFields(p: {
       label: "توضیح کوتاه زیر عنوان",
       rows: 2,
       defaultValue: p.subtitle,
+    },
+    {
+      type: "image",
+      name: "image",
+      label: "تصویر هیروی صفحه",
+      hint: "پس‌زمینه بخش عنوان این صفحه. خالی بماند، تصویر سراسری تنظیمات استفاده می‌شود.",
+      defaultValue: p.image,
     },
     {
       type: "markdown",
@@ -86,6 +94,7 @@ function PageRow({
     eyebrow: string | null;
     subtitle: string | null;
     body: string;
+    image: string;
     seoTitle: string | null;
     seoDesc: string | null;
     published: boolean;

@@ -4,6 +4,7 @@ import { getPage } from "@/server/content";
 import { renderMarkdown } from "@/lib/markdown";
 import { formatJalaliLong } from "@/lib/format";
 import { PageHero } from "@/components/site/ui";
+import { PageBuilder } from "@/components/site/page-builder";
 
 const RELATED = [
   { slug: "privacy", label: "حریم خصوصی" },
@@ -25,6 +26,8 @@ export async function LegalPage({ slug }: { slug: string }) {
         description={page.subtitle ?? undefined}
         breadcrumb={[{ label: page.title }]}
       />
+
+      <PageBuilder slug={slug} />
 
       <section className="section">
         <div className="container grid gap-12 lg:grid-cols-[1fr_260px]">

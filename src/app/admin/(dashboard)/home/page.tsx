@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import type { HomeBanner } from "@prisma/client";
 import Link from "next/link";
 import { ExternalLink, Layers } from "lucide-react";
 import { getSettings, type SiteSettings } from "@/server/settings";
-import { saveHero } from "@/server/admin-actions";
+import { deleteBanner, saveBanner, saveHero } from "@/server/admin-actions";
 import { RecordForm, type FieldSpec } from "@/components/admin/record-form";
 import { AdminPageHeader } from "@/components/admin/page-header";
+import { DeleteButton } from "@/components/admin/delete-button";
+import { prisma } from "@/server/db";
 import { ParticleOrb } from "@/components/three/particle-orb";
 import { toPersianDigits } from "@/lib/format";
 
@@ -101,6 +104,44 @@ function heroFields(s: SiteSettings): FieldSpec[] {
   ];
 }
 
+function bannerFields(b?: HomeBanner): FieldSpec[] {
+  return [
+    {
+      type: "image",
+      name: "image",
+      label: "تصویر بنر",
+      required: true,
+      hint: "نسبت پیشنهادی ۱۶:۹ و عرض حداقل ۱۶۰۰ پیکسل.",
+      defaultValue: b?.image,
+    },
+    { type: "text", name: "title", label: "عنوان", required: true, defaultValue: b?.title },
+    {
+      type: "textarea",
+      name: "subtitle",
+      label: "توضیح کوتاه",
+      rows: 2,
+      defaultValue: b?.subtitle,
+    },
+    { type: "text", name: "imageAlt", label: "متن جایگزین تصویر", defaultValue: b?.imageAlt },
+    {
+      type: "text",
+      name: "href",
+      label: "نشانی مقصد",
+      dir: "ltr",
+      hint: "مثل /business-groups یا یک نشانی کامل. خالی بماند، بنر بدون پیوند می‌شود.",
+      defaultValue: b?.href,
+    },
+    { type: "text", name: "ctaLabel", label: "متن دکمه", defaultValue: b?.ctaLabel },
+    {
+      type: "number",
+      name: "sortOrder",
+      label: "ترتیب نمایش",
+      defaultValue: b?.sortOrder ?? 0,
+    },
+    { type: "checkbox", name: "active", label: "فعال", defaultChecked: b?.active ?? true },
+  ];
+}
+
 /** Parses the `value|label` lines the hero renders. */
 function parseStats(raw: string) {
   return raw
@@ -135,7 +176,10 @@ function StatPreview({ value, label }: { value: string; label: string }) {
 }
 
 export default async function AdminHomePage() {
-  const settings = await getSettings();
+  const [settings, banners] = await Promise.all([
+    getSettings(),
+    prisma.homeBanner.findMany({ orderBy: [{ sortOrder: "asc" }, { updatedAt: "desc" }] }),
+  ]);
   const stats = parseStats(settings.hero_stats);
 
   return (
@@ -199,6 +243,66 @@ export default async function AdminHomePage() {
           </div>
         </aside>
       </div>
+
+      <section className="card mt-6 p-6">
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-line-200 pb-4">
+          <div>
+            <h2 className="text-sm font-bold text-ink-900">بنرهای صفحه اصلی</h2>
+            <p className="mt-1 text-xs text-ink-500">
+              بنرها به‌صورت اسلایدر زیر هیرو نمایش داده می‌شوند. با ترتیب نمایش جابه‌جا می‌شوند و
+              بنر غیرفعال دیده نمی‌شود.
+            </p>
+          </div>
+          <span className="badge">{toPersianDigits(banners.length)} بنر</span>
+        </div>
+
+        <details className="mb-5 rounded-card border border-line-200 p-4">
+          <summary className="cursor-pointer text-sm font-bold text-accent">
+            + افزودن بنر جدید
+          </summary>
+          <div className="mt-5">
+            <RecordForm action={saveBanner} fields={bannerFields()} submitLabel="افزودن بنر" />
+          </div>
+        </details>
+
+        {banners.length === 0 ? (
+          <p className="rounded-btn border border-dashed border-line-200 p-8 text-center text-xs text-ink-500">
+            هنوز بنری ثبت نشده است؛ صفحه اصلی بدون بنر نمایش داده می‌شود.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {banners.map((b) => (
+              <details key={b.id} className="rounded-card border border-line-200 p-4">
+                <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-3">
+                  <span className="flex items-center gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={b.image}
+                      alt={b.imageAlt || b.title}
+                      className="h-12 w-20 rounded-btn border border-line-200 object-cover"
+                    />
+                    <span className="text-sm font-bold text-ink-900">{b.title}</span>
+                  </span>
+                  <span className={b.active ? "badge" : "text-xs text-ink-500"}>
+                    {b.active ? "فعال" : "غیرفعال"}
+                  </span>
+                </summary>
+                <div className="mt-5 border-t border-line-200 pt-5">
+                  <RecordForm
+                    action={saveBanner}
+                    hidden={{ id: b.id }}
+                    fields={bannerFields(b)}
+                    submitLabel="ذخیره بنر"
+                  />
+                  <div className="mt-4 border-t border-line-200 pt-4">
+                    <DeleteButton action={deleteBanner} id={b.id} label="حذف بنر" />
+                  </div>
+                </div>
+              </details>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

@@ -45,6 +45,7 @@ Everything below was executed, not assumed.
 | Back-to-top | `opacity 0 / pointer-events none` at the top → visible after scrolling → smooth scroll lands at `scrollY 0` |
 | Video modal | admin-configurable embed, portalled to `<body>` at `z-100`, two close buttons + Escape, page scroll locked and restored |
 | `npm run verify` | **33/33** (adds: WebP on both upload paths, converted asset served as `image/webp`, logo height persisted + applied) |
+| CMS images + banners + page builder (this pass) | media upload → WebP → served with `naturalWidth 1600`; media title/alt saved; a banner saved from `/admin/home` rendered on `/` with the image loading (1600×900); a "split" widget added in `/admin/layout` rendered on `/about`; group/store/job image fields saved and rendered; page image applied as the `/about` hero backdrop |
 | Query dedup (measured) | `/business-groups/digital`: **4 queries** (Setting 1, group-by-slug 1, group list 1, store list 1). Uncached: 6 (Setting ×2, by-slug ×2) |
 | Counter animation | animates via `textContent` (۸→۱۴, ۲→۴, ۱۶۲→۳۰۰+ observed) with no per-frame React renders |
 | Orb scoped to the hero | opacity **1.00** with canvas mounted at y=0/600; **0.14** at y=1000; **0.00 with the canvas unmounted** from y=1100 to y=6000; remounts at y=0 |
@@ -103,7 +104,18 @@ persisted, uploaded logo rendered in the header). It cleans up every row and fil
   checkboxes, honeypot, rate limiting, DB persistence, works without JS.
 - **Admin CMS:** session auth, dashboard, full CRUD for groups/stores/news/blog/careers, editor for
   the legal/about pages, forms inbox (messages, applications + status, subscribers) with CSV
-  export, media library, and settings — including the **logo + favicon upload** section.
+  export, media library (upload, edit metadata, replace file, gallery flag), and settings —
+  including the **logo + favicon upload** section.
+- **Images everywhere:** every business group, store, news post, article, job opening and page can
+  take a media-library image (`image` column + `ImageField`). News/article images are used on cards
+  and at the top of the article; a page image overrides the global hero backdrop; the public
+  `/media` gallery lists assets whose «نمایش در گالری» is on.
+- **Home banners:** `HomeBanner` rows managed from `/admin/home` render as an accessible slider
+  under the hero (image, title, subtitle, link, CTA, order, active). No rows = no section.
+- **Page builder:** `/admin/layout` edits `PageBlock` rows per page. Ten widget types (heading,
+  Markdown text, image, image+text, cards, stats, CTA, gallery, video, spacer) with add, edit,
+  reorder, hide and delete; the public renderer lives in `components/site/page-builder.tsx` and is
+  mounted below each page hero (including the home page and legal pages).
 - **Branding:** uploaded logo used in header/footer/admin login; uploaded favicon overrides the
   bundled `/icon.svg` through the root metadata. Previous files are deleted on replace.
 - **SEO:** per-page metadata, Open Graph (logo as image), `sitemap.xml`, `robots.txt`, `/admin`

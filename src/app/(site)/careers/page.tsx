@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Briefcase, MapPin } from "lucide-react";
 import { getJobOpenings } from "@/server/content";
+import { PageBuilder } from "@/components/site/page-builder";
 import { PageHero, SectionHeading, EmptyState } from "@/components/site/ui";
 import { ApplicationForm } from "@/components/site/forms";
+import { SiteImage } from "@/components/site/site-image";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +34,8 @@ export default async function CareersPage() {
         description="ما به دنبال افرادی هستیم که به کیفیت، یادگیری و کار تیمی اهمیت می‌دهند."
         breadcrumb={[{ label: "فرصت‌های شغلی" }]}
       />
+      <PageBuilder slug="careers" />
+
 
       <section className="section">
         <div className="container grid gap-12 lg:grid-cols-[1.4fr_1fr]">
@@ -43,6 +47,13 @@ export default async function CareersPage() {
               <ul className="space-y-4">
                 {jobs.map((j) => (
                   <li key={j.id} className="card p-6">
+                    <div className="flex flex-wrap items-start gap-5">
+                      {j.image ? (
+                        <div className="h-24 w-32 shrink-0 overflow-hidden rounded-btn border border-line-200 bg-surface-50">
+                          <SiteImage src={j.image} alt={j.title} className="h-full w-full object-cover" />
+                        </div>
+                      ) : null}
+                      <div className="min-w-[12rem] flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h3 className="heading-3">{j.title}</h3>
                       <span className="badge">{j.type}</span>
@@ -71,6 +82,8 @@ export default async function CareersPage() {
                           ))}
                       </ul>
                     ) : null}
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>

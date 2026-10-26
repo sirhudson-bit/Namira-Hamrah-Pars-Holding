@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { getSettings } from "@/server/settings";
 import { toLatinDigits } from "@/lib/format";
+import { PageBuilder } from "@/components/site/page-builder";
 import { PageHero } from "@/components/site/ui";
 import { ContactForm } from "@/components/site/forms";
 import { MapEmbed } from "@/components/site/map-embed";
@@ -33,6 +34,8 @@ export default async function ContactPage() {
         description="پرسش، پیشنهاد همکاری یا درخواست پشتیبانی خود را از این صفحه ارسال کنید."
         breadcrumb={[{ label: "تماس با ما" }]}
       />
+      <PageBuilder slug="contact" />
+
 
       <section className="section">
         <div className="container grid gap-12 lg:grid-cols-[1.3fr_1fr]">

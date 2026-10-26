@@ -4,6 +4,7 @@ import Image from "next/image";
 import { getNews } from "@/server/content";
 import { formatJalaliLong } from "@/lib/format";
 import { PageHero, EmptyState } from "@/components/site/ui";
+import { SiteImage } from "@/components/site/site-image";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,11 @@ export default async function NewsListPage() {
                   className="group card flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lift"
                 >
                   <div className="relative h-44 bg-gradient-to-br from-brand-600 to-dark-800">
-                    <Image src="/images/news-placeholder.svg" alt="" fill className="object-cover opacity-70" sizes="33vw" />
+                    {n.image ? (
+                      <SiteImage src={n.image} alt={n.title} className="h-full w-full object-cover" />
+                    ) : (
+                      <Image src="/images/news-placeholder.svg" alt="" fill className="object-cover opacity-70" sizes="33vw" />
+                    )}
                   </div>
                   <div className="flex flex-1 flex-col p-6">
                     <span className="badge w-fit">{n.category}</span>
