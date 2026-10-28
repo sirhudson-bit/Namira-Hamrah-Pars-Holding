@@ -427,6 +427,12 @@ scripts/
 - **All page elements** (`/admin/content`): services, organisational units, innovation projects,
   team members and timeline milestones now have create/edit/delete screens instead of being
   seed-only.
+- **Professional editor**: page bodies use `@mdxeditor/editor` — a ready-made Lexical/Markdown
+  WYSIWYG with a Persian toolbar (headings, bold/italic/underline, inline and block code, links,
+  lists, tables, images, thematic breaks, undo/redo), Markdown shortcuts, a source/diff mode and
+  the media-library picker for images. The stored value is still Markdown, so the existing
+  renderer and content remain unchanged. The editor is dynamically imported (browser-only) and
+  themed with the site's light/dark tokens.
 
 ## Deployment
 

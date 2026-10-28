@@ -519,3 +519,97 @@
     opacity: calc(var(--sphere-fade, 1) * 0.7);
   }
 }
+
+
+/* ---------------------------------------------------------------- MDXEditor */
+/* The CMS editor is a ready-made MDXEditor widget; these overrides make it
+   follow the site's light/dark tokens and the RTL layout instead of shipping
+   the package's default light purple theme. */
+.mdx-editor-shell {
+  overflow: hidden;
+  border: 1px solid var(--line-200);
+  border-radius: theme("borderRadius.card");
+  background: rgb(var(--surface));
+}
+.mdx-extra-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--line-200);
+  background: rgb(var(--surface-50));
+  padding: 0.5rem 0.75rem;
+}
+.mdx-editor {
+  --basePageBg: rgb(var(--surface));
+  --baseBase: rgb(var(--surface));
+  --baseBg: rgb(var(--surface-100));
+  --baseBgSubtle: rgb(var(--surface-50));
+  --baseBgHover: rgb(var(--surface-200));
+  --baseBgActive: rgb(var(--surface-200));
+  --baseBorder: var(--line-200);
+  --baseBorderHover: var(--line-200);
+  --baseLine: var(--line-200);
+  --baseSolid: rgb(var(--ink-700));
+  --baseSolidHover: rgb(var(--ink-900));
+  --baseText: rgb(var(--ink-900));
+  --baseTextContrast: rgb(var(--ink-900));
+  --accentSolid: rgb(var(--brand-500));
+  --accentSolidHover: rgb(var(--brand-600));
+  --accentText: rgb(var(--ink-900));
+  --accentBg: rgb(var(--surface-200));
+  --accentBgHover: rgb(var(--surface-200));
+  --accentBgActive: rgb(var(--surface-200));
+  --accentBorder: var(--line-200);
+  background: rgb(var(--surface));
+  color: rgb(var(--ink-900));
+}
+.mdx-editor .mdxeditor-toolbar {
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  border-bottom: 1px solid var(--line-200);
+  background: rgb(var(--surface-100));
+  padding: 0.4rem 0.6rem;
+}
+.mdx-editor .mdxeditor-toolbar button,
+.mdx-editor .mdxeditor-toolbar [role="button"] {
+  color: rgb(var(--ink-700));
+}
+.mdx-editor .mdxeditor-toolbar button:hover,
+.mdx-editor .mdxeditor-toolbar [role="button"]:hover {
+  background: rgb(var(--surface-200));
+  color: rgb(var(--ink-900));
+}
+.mdx-editor .mdxeditor-root-contenteditable {
+  min-height: var(--mdx-min-height, 360px);
+  color: rgb(var(--ink-900));
+  font-family: inherit;
+  line-height: var(--site-line-height, 1.9);
+}
+.mdx-editor .mdxeditor-root-contenteditable [contenteditable="true"] {
+  outline: none;
+}
+.mdx-editor .mdxeditor-root-contenteditable h1,
+.mdx-editor .mdxeditor-root-contenteditable h2,
+.mdx-editor .mdxeditor-root-contenteditable h3,
+.mdx-editor .mdxeditor-root-contenteditable h4 {
+  color: rgb(var(--ink-900));
+  font-weight: 800;
+  line-height: 1.5;
+}
+.mdx-editor .mdxeditor-root-contenteditable h2 { font-size: 1.45rem; }
+.mdx-editor .mdxeditor-root-contenteditable h3 { font-size: 1.2rem; }
+.mdx-editor .mdxeditor-root-contenteditable a { color: rgb(var(--brand-600)); text-decoration: underline; }
+.mdx-editor .mdxeditor-root-contenteditable blockquote {
+  border-inline-start: 3px solid rgb(var(--brand-500));
+  color: rgb(var(--ink-500));
+  padding-inline-start: 1rem;
+}
+.mdx-editor .mdxeditor-root-contenteditable code {
+  background: rgb(var(--surface-200));
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.3rem;
+}
+.mdx-editor .mdxeditor-root-contenteditable img { max-width: 100%; border-radius: 0.75rem; }
+.mdx-editor .mdxeditor-diff-editor { direction: ltr; text-align: left; }
+.mdx-editor .mdxeditor-source-editor { direction: ltr; text-align: left; }

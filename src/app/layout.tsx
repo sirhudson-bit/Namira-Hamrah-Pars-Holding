@@ -6,6 +6,7 @@ import {
   ThemeProvider,
   THEME_BOOT_SCRIPT,
 } from "@/components/theme/theme-provider";
+import "@mdxeditor/editor/style.css";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {

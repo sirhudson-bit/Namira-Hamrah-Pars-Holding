@@ -488,3 +488,35 @@ or
   are editable. Any page can be extended or replaced with widgets from the layout editor.
 - Live editing is intentionally limited to plain text fields; images, image focus and Markdown use
   their dedicated admin forms.
+
+---
+
+## Session 12 — Professional Markdown editor (MDXEditor)
+
+**What changed.** Replaced the hand-rolled textarea `MarkdownEditor` with a ready-made,
+Lexical-based `@mdxeditor/editor` WYSIWYG (`src/components/admin/mdx-editor-inner.tsx`). Page bodies
+are still stored as Markdown, so the existing `renderMarkdown` path and old content are unchanged.
+
+**Integration details.**
+- `src/components/admin/markdown-editor.tsx` keeps the old form contract (`name`, `label`, `hint`,
+  `rows`, `required`) and renders a hidden input carrying Markdown into the server action.
+- The editor is loaded with `next/dynamic` and `ssr: false` because Lexical is browser-only.
+- Package CSS is imported in `src/app/layout.tsx` before `globals.css`; the overrides in
+  `globals.css` map MDXEditor's Radix variables to the site's light/dark tokens and RTL layout.
+- `mdx-editor-inner.tsx` adds a Persian `translation` map (toolbar, link/image dialogs, table menu),
+  rich/source/diff toggles, Markdown shortcuts, tables, code blocks, links and images.
+- A «درج تصویر از رسانه» button opens the existing media library and inserts Markdown at the
+  cursor through `MDXEditorMethods.insertMarkdown`.
+- Removed `MarkdownEditor`'s old toolbar/preview/keyboard-insert helpers.
+
+**Verification.**
+- `npm run typecheck`, `npm run lint`, `npm test` (29/29), `npm run build` — clean.
+- Browser (dev and `npm start`): editor loads with 18 toolbar buttons, Persian aria labels,
+  rich↔source toggle works, media dialog opens; typed text serialized to the hidden field and
+  saved to `Page.body`; about body restored to empty afterwards.
+- Production build loads the editor and labels correctly; mobile 320/390 toolbar wraps inside the
+  admin shell.
+
+**Notes.** The package adds CodeMirror/Lexical chunks; the route is dynamically imported so the
+public site does not load the editor bundle. Keep the hidden input as the form value when changing
+the editor wrapper.

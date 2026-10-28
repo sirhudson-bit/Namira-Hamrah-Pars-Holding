@@ -16,6 +16,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@mdxeditor/editor": "^4.3.4",
     "@prisma/client": "^6.19.3",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.1",
