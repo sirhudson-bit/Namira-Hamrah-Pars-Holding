@@ -613,3 +613,37 @@
 .mdx-editor .mdxeditor-root-contenteditable img { max-width: 100%; border-radius: 0.75rem; }
 .mdx-editor .mdxeditor-diff-editor { direction: ltr; text-align: left; }
 .mdx-editor .mdxeditor-source-editor { direction: ltr; text-align: left; }
+
+/* MDXEditor renders its dialogs/popovers through portals, outside .mdx-editor,
+   so they cannot inherit the scoped variables above. Match the hashed class
+   names by suffix to keep them on the site's surface tokens too. */
+[class*="_dialogContent_"],
+[class*="_largeDialogContent_"],
+[class*="_popoverContent_"],
+[class*="_toolbarCodeBlockLanguageSelectContent"] {
+  border: 1px solid var(--line-200);
+  border-radius: 0.75rem;
+  background: rgb(var(--surface));
+  color: rgb(var(--ink-900));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+}
+[class*="_dialogOverlay_"] {
+  background: rgba(4, 10, 9, 0.62);
+  backdrop-filter: blur(2px);
+}
+[class*="_dialogInput_"],
+[class*="_dialogForm_"] input,
+[class*="_dialogForm_"] textarea {
+  border: 1px solid var(--line-200);
+  border-radius: 0.5rem;
+  background: rgb(var(--surface-50));
+  color: rgb(var(--ink-900));
+}
+[class*="_dialogCloseButton_"] {
+  color: rgb(var(--ink-500));
+}
+[class*="_tooltipContent_"] {
+  background: rgb(var(--ink-900));
+  color: rgb(var(--surface));
+  border-radius: 0.4rem;
+}
