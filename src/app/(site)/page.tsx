@@ -33,6 +33,7 @@ import { VideoModalTrigger } from "@/components/site/video-modal";
 import { HomeBanners } from "@/components/site/home-banners";
 import { PageBuilder } from "@/components/site/page-builder";
 import { SiteImage } from "@/components/site/site-image";
+import { imagePositionCss } from "@/lib/media";
 import KineticGrid from "@/components/ui/kinetic-grid";
 
 export const dynamic = "force-dynamic";
@@ -233,7 +234,7 @@ export default async function HomePage() {
                     <article className="card relative flex h-full flex-col overflow-hidden p-6 shadow-lift transition-all duration-300 ease-smooth hover:-translate-y-1 hover:border-brand-500/40">
                       {g.image ? (
                         <div className="-mx-6 -mt-6 mb-5 aspect-[16/9] overflow-hidden border-b border-line-200 bg-surface-50">
-                          <SiteImage src={g.image} alt={g.imageAlt || g.name} className="h-full w-full object-cover" />
+                          <SiteImage src={g.image} alt={g.imageAlt || g.name} style={{ objectPosition: imagePositionCss(g.imagePosition) }} className="h-full w-full object-cover" />
                         </div>
                       ) : null}
                       <div className="flex items-center justify-between">
@@ -461,6 +462,7 @@ export default async function HomePage() {
                         <SiteImage
                           src={n.image}
                           alt={n.title}
+                          style={{ objectPosition: imagePositionCss(n.imagePosition) }}
                           className="absolute inset-0 h-full w-full object-cover"
                         />
                       ) : (

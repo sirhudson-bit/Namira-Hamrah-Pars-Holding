@@ -6,6 +6,7 @@ import { getBusinessGroup, getBusinessGroups, getStores } from "@/server/content
 import { PageHero } from "@/components/site/ui";
 import { IconByName } from "@/components/site/icon";
 import { SiteImage } from "@/components/site/site-image";
+import { imagePositionCss } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,7 @@ export default async function BusinessGroupPage({
           <div>
             {group.image ? (
               <div className="mb-7 aspect-[16/9] overflow-hidden rounded-card border border-line-200 bg-surface-50">
-                <SiteImage src={group.image} alt={group.imageAlt || group.name} className="h-full w-full object-cover" />
+                <SiteImage src={group.image} alt={group.imageAlt || group.name} style={{ objectPosition: imagePositionCss(group.imagePosition) }} className="h-full w-full object-cover" />
               </div>
             ) : null}
             <div className="flex items-center gap-4">

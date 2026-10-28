@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
-import { FOOTER_NAV } from "@/lib/site";
 import { currentJalaliYear, toLatinDigits } from "@/lib/format";
 import { Logo } from "@/components/site/logo";
 import { CookieSettingsButton } from "@/components/site/cookie-consent";
@@ -10,8 +9,9 @@ import {
   TelegramIcon,
 } from "@/components/site/social-icons";
 import type { SiteSettings } from "@/server/settings";
+import type { FooterColumn } from "@/server/menus";
 
-export function Footer({ settings }: { settings: SiteSettings }) {
+export function Footer({ settings, menus }: { settings: SiteSettings; menus: FooterColumn[] }) {
   const socials = [
     { href: settings.instagram, label: "اینستاگرام", Icon: InstagramIcon },
     { href: settings.linkedin, label: "لینکدین", Icon: LinkedinIcon },
@@ -57,7 +57,7 @@ export function Footer({ settings }: { settings: SiteSettings }) {
             </ul>
           </div>
 
-          {FOOTER_NAV.map((col) => (
+          {menus.map((col) => (
             <nav key={col.title} aria-label={col.title}>
               <h2 className="mb-5 text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
                 {col.title}

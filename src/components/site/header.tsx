@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { ArrowLeft, ArrowUpRight, Menu, Phone, X } from "lucide-react";
-import { MAIN_NAV } from "@/lib/site";
+import type { NavItem } from "@/lib/site";
 import { toLatinDigits } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/site/logo";
@@ -13,7 +13,7 @@ import { EASE } from "@/components/motion/reveal";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import type { HeaderSettings } from "@/server/settings";
 
-export function Header({ settings }: { settings: HeaderSettings }) {
+export function Header({ settings, nav }: { settings: HeaderSettings; nav: NavItem[] }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
@@ -90,7 +90,7 @@ export function Header({ settings }: { settings: HeaderSettings }) {
           </Link>
 
           <nav aria-label="ناوبری اصلی" className="hidden items-center gap-0.5 xl:flex">
-            {MAIN_NAV.map((item) => {
+            {nav.map((item) => {
               const active = isActive(item.href);
               if (!item.children) {
                 return (
@@ -258,7 +258,7 @@ export function Header({ settings }: { settings: HeaderSettings }) {
               aria-label="ناوبری موبایل"
               className="relative h-[calc(100%-5rem)] overflow-y-auto px-4 pb-8"
             >
-              {MAIN_NAV.map((item, i) => (
+              {nav.map((item, i) => (
                 <motion.div
                   key={item.label}
                   initial={{ opacity: 0, y: 12 }}

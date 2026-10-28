@@ -3,6 +3,7 @@ import type { NewsPost } from "@prisma/client";
 import { prisma } from "@/server/db";
 import { saveNews, deleteNews } from "@/server/admin-actions";
 import { RecordForm, type FieldSpec } from "@/components/admin/record-form";
+import { imagePositionField } from "@/lib/image-fields";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { AdminPageHeader } from "@/components/admin/page-header";
 import { formatJalaliLong } from "@/lib/format";
@@ -43,6 +44,7 @@ function newsFields(n?: NewsPost): FieldSpec[] {
       hint: "روی کارت خبر در صفحه اصلی و صفحه رسانه، و بالای متن خبر نمایش داده می‌شود.",
       defaultValue: n?.image,
     },
+    imagePositionField(n?.imagePosition),
     {
       type: "markdown",
       name: "body",

@@ -3,6 +3,7 @@ import type { JobOpening } from "@prisma/client";
 import { prisma } from "@/server/db";
 import { saveJob, deleteJob } from "@/server/admin-actions";
 import { RecordForm, type FieldSpec } from "@/components/admin/record-form";
+import { imagePositionField } from "@/lib/image-fields";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { AdminPageHeader } from "@/components/admin/page-header";
 
@@ -52,6 +53,7 @@ function jobFields(j?: JobOpening): FieldSpec[] {
       hint: "کنار عنوان موقعیت در صفحه فرصت‌های شغلی نمایش داده می‌شود.",
       defaultValue: j?.image,
     },
+    imagePositionField(j?.imagePosition),
     {
       type: "checkbox",
       name: "active",

@@ -3,6 +3,7 @@ import type { Store } from "@prisma/client";
 import { prisma } from "@/server/db";
 import { saveStore, deleteStore } from "@/server/admin-actions";
 import { RecordForm, type FieldSpec } from "@/components/admin/record-form";
+import { imagePositionField } from "@/lib/image-fields";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { AdminPageHeader } from "@/components/admin/page-header";
 
@@ -59,6 +60,7 @@ function storeFields(s?: Store): FieldSpec[] {
       hint: "روی کارت کانال فروش و بالای صفحه اختصاصی نمایش داده می‌شود.",
       defaultValue: s?.image,
     },
+    imagePositionField(s?.imagePosition),
     {
       type: "checkbox",
       name: "published",

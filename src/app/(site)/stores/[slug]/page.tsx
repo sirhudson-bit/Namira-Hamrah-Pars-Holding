@@ -7,6 +7,7 @@ import { PageHero } from "@/components/site/ui";
 import { STORE_KIND_LABELS } from "@/lib/store-kinds";
 import { toPersianDigits } from "@/lib/format";
 import { SiteImage } from "@/components/site/site-image";
+import { imagePositionCss } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,7 @@ export default async function StorePage({
           <div>
             {store.image ? (
               <div className="mb-7 aspect-[16/9] overflow-hidden rounded-card border border-line-200 bg-surface-50">
-                <SiteImage src={store.image} alt={store.name} className="h-full w-full object-cover" />
+                <SiteImage src={store.image} alt={store.name} style={{ objectPosition: imagePositionCss(store.imagePosition) }} className="h-full w-full object-cover" />
               </div>
             ) : null}
             <span className="flex h-16 w-16 items-center justify-center rounded-card bg-brand-700/20 text-accent">

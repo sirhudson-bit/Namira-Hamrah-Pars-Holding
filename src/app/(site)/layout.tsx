@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wrench } from "lucide-react";
 import { getSettings } from "@/server/settings";
+import { getFooterMenus, getHeaderNav } from "@/server/menus";
 import { getCurrentUser } from "@/server/auth";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
@@ -10,15 +11,16 @@ import { CookieConsent } from "@/components/site/cookie-consent";
 import { ConsentGatedAnalytics } from "@/components/site/analytics";
 import { BackToTop } from "@/components/site/back-to-top";
 import { ScrollProgress } from "@/components/motion/scroll-progress";
+import { LiveEditBar } from "@/components/site/live-edit-bar";
 
 export default async function SiteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const settings = await getSettings();
+  const [settings, nav, footerMenus] = await Promise.all([getSettings(), getHeaderNav(), getFooterMenus()]);
   const maintenance = settings.maintenance_mode === "true";
-  const user = maintenance ? await getCurrentUser() : null;
+  const user = await getCurrentUser();
 
   /**
    * Maintenance mode is enforced here rather than in middleware: the flag lives
@@ -63,6 +65,7 @@ export default async function SiteLayout({
       </a>
       <ScrollProgress />
       <Header
+        nav={nav}
         settings={{
           site_name: settings.site_name,
           logo_path: settings.logo_path,
@@ -75,8 +78,9 @@ export default async function SiteLayout({
         {children}
       </main>
       <NewsletterBand />
-      <Footer settings={settings} />
+      <Footer settings={settings} menus={footerMenus} />
       <BackToTop />
+      <LiveEditBar isAdmin={Boolean(user)} />
       <CookieConsent />
       <ConsentGatedAnalytics gaId={gaId} />
     </div>

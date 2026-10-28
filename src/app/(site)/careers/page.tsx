@@ -5,6 +5,7 @@ import { PageBuilder } from "@/components/site/page-builder";
 import { PageHero, SectionHeading, EmptyState } from "@/components/site/ui";
 import { ApplicationForm } from "@/components/site/forms";
 import { SiteImage } from "@/components/site/site-image";
+import { imagePositionCss } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,7 @@ export default async function CareersPage() {
                     <div className="flex flex-wrap items-start gap-5">
                       {j.image ? (
                         <div className="h-24 w-32 shrink-0 overflow-hidden rounded-btn border border-line-200 bg-surface-50">
-                          <SiteImage src={j.image} alt={j.title} className="h-full w-full object-cover" />
+                          <SiteImage src={j.image} alt={j.title} style={{ objectPosition: imagePositionCss(j.imagePosition) }} className="h-full w-full object-cover" />
                         </div>
                       ) : null}
                       <div className="min-w-[12rem] flex-1">

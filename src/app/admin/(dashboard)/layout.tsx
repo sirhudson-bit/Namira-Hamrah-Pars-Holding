@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireAdmin } from "@/server/auth";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { AdminTopbar } from "@/components/admin/topbar";
+import { ensureMenus } from "@/server/menus";
 
 export const metadata: Metadata = {
   title: { default: "پنل مدیریت", template: "%s | پنل مدیریت نامیرا" },
@@ -14,6 +15,9 @@ export default async function AdminDashboardLayout({
   children: React.ReactNode;
 }) {
   const user = await requireAdmin();
+  // Seed the editable navigation once, so the first login makes the header and
+  // footer database-backed instead of waiting for /admin/menus to be opened.
+  await ensureMenus();
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-50 lg:flex-row">

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/motion/reveal";
 import { getPageCopy } from "@/server/content";
 import { getSettings } from "@/server/settings";
-import { imageSrc } from "@/lib/media";
+import { imagePositionCss, imageSrc } from "@/lib/media";
 
 export function Breadcrumb({ items }: { items: { label: string; href?: string }[] }) {
   return (
@@ -62,6 +62,7 @@ export async function PageHero({
   const lead = copy?.description || description;
   // A page-level backdrop wins over the site-wide one set in /admin/settings.
   const backdrop = imageSrc(copy?.image) || settings.page_hero_bg;
+  const live = slug ? { "data-live-page": slug } : {};
 
   return (
     <section
@@ -80,7 +81,7 @@ export async function PageHero({
         <div className="pointer-events-none absolute inset-0" aria-hidden>
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${backdrop})` }}
+            style={{ backgroundImage: `url(${backdrop})`, backgroundPosition: imagePositionCss(copy?.imagePosition) }}
           />
           <div className="absolute inset-0 bg-gradient-to-l from-surface-50/90 via-surface-50/60 to-surface-50/15" />
         </div>
@@ -95,15 +96,15 @@ export async function PageHero({
           {kicker ? (
             <p className="kicker inline-flex items-center gap-3">
               <span className="h-px w-8 bg-brand-500/60" aria-hidden />
-              {kicker}
+              <span {...live} data-live-field={slug ? "eyebrow" : undefined}>{kicker}</span>
             </p>
           ) : null}
           {/* ink-900, not white: this hero sits on the themed page canvas, which
               is light in light mode — a hard-coded white heading disappeared
               there. */}
-          <h1 className="display-1 mt-5 max-w-4xl text-ink-900">{heading}</h1>
+          <h1 className="display-1 mt-5 max-w-4xl text-ink-900" {...live} data-live-field={slug ? "title" : undefined}>{heading}</h1>
           {lead ? (
-            <p className="mt-6 max-w-2xl text-base leading-9 text-ink-500">{lead}</p>
+            <p className="mt-6 max-w-2xl text-base leading-9 text-ink-500" {...live} data-live-field={slug ? "subtitle" : undefined}>{lead}</p>
           ) : null}
         </Reveal>
       </div>
@@ -116,12 +117,20 @@ export function SectionHeading({
   title,
   description,
   align = "right",
+  livePage,
+  liveBlock,
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
   align?: "right" | "center";
+  /** When set, the heading becomes editable in the on-site live editor. */
+  livePage?: string;
+  liveBlock?: string;
 }) {
+  const live = livePage
+    ? { "data-live-page": livePage, ...(liveBlock ? { "data-live-block": liveBlock } : {}) }
+    : {};
   return (
     <Reveal
       className={cn("mb-12 max-w-2xl", align === "center" && "mx-auto text-center")}
@@ -134,12 +143,12 @@ export function SectionHeading({
           )}
         >
           <span className="h-px w-8 bg-brand-500/60" aria-hidden />
-          {eyebrow}
+          <span {...live} data-live-field={livePage ? "eyebrow" : undefined}>{eyebrow}</span>
         </p>
       ) : null}
-      <h2 className="display-2 mt-4 text-ink-900">{title}</h2>
+      <h2 className="display-2 mt-4 text-ink-900" {...live} data-live-field={livePage ? "title" : undefined}>{title}</h2>
       {description ? (
-        <p className="mt-4 text-base leading-9 text-ink-500">{description}</p>
+        <p className="mt-4 text-base leading-9 text-ink-500" {...live} data-live-field={livePage ? "description" : undefined}>{description}</p>
       ) : null}
     </Reveal>
   );

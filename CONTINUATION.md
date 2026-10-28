@@ -440,3 +440,51 @@ or
 - **Verify, then report honestly.** Drive the real endpoint. When a check fails, find out whether
   the app or the test is wrong (§7 has two examples of the latter).
 - **Never overstate.** Known gaps are listed, not hidden.
+
+## Session 11 — WordPress-style pages, menus, image focus, live editing
+
+### What changed
+
+1. **Pages CRUD.** `/admin/pages` is now a real list with create / edit / duplicate / delete and
+   publish state. `/admin/pages/[id]` edits title, slug (custom pages only), eyebrow, subtitle,
+   Markdown body, hero image + focus, SEO and publication. Existing route pages keep their slug so
+   they cannot detach from their static route. Deleting a custom page also removes its blocks.
+2. **Body finally renders.** `PageBuilder` now loads the published Page row and renders its
+   Markdown body above the widgets, even when a page has no widgets. This was the main reason
+   "page content management did nothing": the body was stored but never output.
+3. **Custom pages.** A new `(site)/[slug]` route serves pages created in the admin at `/<slug>`;
+   unknown or unpublished slugs are a real 404. Static routes take precedence.
+4. **Menus.** New `Menu`/`MenuItem` tables, `/admin/menus` with create menu, create/edit/delete/
+   reorder/hide/nest items, plus header and footer rendering from the database. The first admin
+   visit seeds the old built-in nav into editable rows; the public site falls back to the built-in
+   nav until then. Every non-header menu renders as a footer column.
+5. **Image focus.** `imagePosition` on Page, HomeBanner, BusinessGroup, Store, NewsPost, BlogPost,
+   JobOpening and on the image/split widgets. The admin select shares one option list with
+   `imagePositionCss`; public components apply `object-position` / `background-position`.
+6. **Live editor.** Admin-only floating bar on the public site. It makes hero title/eyebrow/lead
+   and widget text fields contenteditable; blur posts to `/api/admin/live-edit`, which checks the
+   session, whitelists page/block text fields and revalidates the public path. Images, URLs and
+   Markdown stay in the full editor.
+7. **All elements.** `/admin/content` adds CRUD for services, organisational units, innovation
+   projects, team members and milestones (previously seed-only). Existing editors for groups,
+   stores, news, blog, jobs, banners and media remain.
+
+### Verification
+
+- `npm run typecheck`, `npm run lint`, `npm test` → 29/29, `npm run build` clean with the new
+  `/[slug]`, `/admin/pages/[id]`, `/admin/menus` and `/admin/content` routes.
+- Browser: created `test-cms-page`, saved a Markdown body, published it, opened `/test-cms-page`
+  and saw the body; deleted it from the list. Edited a header menu label and saw it in the public
+  header. Live-edited the about hero title; DB showed the new value, then restored it.
+- Image focus: set a group image to `top`, public card computed `object-position: 50% 0%`; restored.
+- Existing `/about` body was set through the Page model and rendered by `PageBuilder`, then cleared.
+- Test page removed, about title/body and group image restored; seeded menus left in place (they
+  are the editable copy of the original navigation).
+
+### Limits worth knowing
+
+- The old hard-coded marketing sections (e.g. the about stats/pillars/values) still have their
+  built-in layout; their *data-driven* children (team, milestones, services, units, innovation)
+  are editable. Any page can be extended or replaced with widgets from the layout editor.
+- Live editing is intentionally limited to plain text fields; images, image focus and Markdown use
+  their dedicated admin forms.

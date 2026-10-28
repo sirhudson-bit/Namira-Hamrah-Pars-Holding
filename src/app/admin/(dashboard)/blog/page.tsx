@@ -3,6 +3,7 @@ import type { BlogPost } from "@prisma/client";
 import { prisma } from "@/server/db";
 import { saveBlogPost, deleteBlogPost } from "@/server/admin-actions";
 import { RecordForm, type FieldSpec } from "@/components/admin/record-form";
+import { imagePositionField } from "@/lib/image-fields";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { AdminPageHeader } from "@/components/admin/page-header";
 import { formatJalaliLong } from "@/lib/format";
@@ -44,6 +45,7 @@ function blogFields(p?: BlogPost): FieldSpec[] {
       hint: "روی کارت مقاله و بالای متن مقاله نمایش داده می‌شود.",
       defaultValue: p?.image,
     },
+    imagePositionField(p?.imagePosition),
     {
       type: "markdown",
       name: "body",

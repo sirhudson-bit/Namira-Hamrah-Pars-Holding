@@ -16,6 +16,7 @@ export function SiteImage({
   priority,
   width,
   height,
+  style,
 }: {
   src: string | null | undefined;
   alt: string;
@@ -23,6 +24,7 @@ export function SiteImage({
   priority?: boolean;
   width?: number;
   height?: number;
+  style?: React.CSSProperties;
 }) {
   const safe = imageSrc(src);
   if (!safe) return null;
@@ -35,6 +37,7 @@ export function SiteImage({
       height={height}
       loading={priority ? "eager" : "lazy"}
       decoding="async"
+      style={style}
       className={cn("block", className)}
     />
   );

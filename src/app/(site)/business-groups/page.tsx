@@ -8,6 +8,7 @@ import { IconByName } from "@/components/site/icon";
 import { Stagger, StaggerItem } from "@/components/motion/reveal";
 import { Tilt } from "@/components/motion/tilt";
 import { SiteImage } from "@/components/site/site-image";
+import { imagePositionCss } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,7 @@ export default async function BusinessGroupsPage() {
                 <article className="card flex h-full flex-col overflow-hidden p-7">
                   {g.image ? (
                     <div className="-mx-7 -mt-7 mb-5 aspect-[16/9] border-b border-line-200 bg-surface-50">
-                      <SiteImage src={g.image} alt={g.imageAlt || g.name} className="h-full w-full object-cover" />
+                      <SiteImage src={g.image} alt={g.imageAlt || g.name} style={{ objectPosition: imagePositionCss(g.imagePosition) }} className="h-full w-full object-cover" />
                     </div>
                   ) : null}
                   <div className="flex items-center gap-4">

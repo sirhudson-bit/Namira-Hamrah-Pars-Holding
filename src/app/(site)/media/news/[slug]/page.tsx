@@ -7,6 +7,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { formatJalaliLong } from "@/lib/format";
 import { PageHero } from "@/components/site/ui";
 import { SiteImage } from "@/components/site/site-image";
+import { imagePositionCss } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +52,7 @@ export default async function NewsDetailPage({
           </time>
           {post.image ? (
             <div className="mb-8 aspect-[16/9] overflow-hidden rounded-card border border-line-200 bg-surface-50">
-              <SiteImage src={post.image} alt={post.title} priority className="h-full w-full object-cover" />
+              <SiteImage src={post.image} alt={post.title} priority style={{ objectPosition: imagePositionCss(post.imagePosition) }} className="h-full w-full object-cover" />
             </div>
           ) : null}
           <p className="lead mb-8">{post.excerpt}</p>

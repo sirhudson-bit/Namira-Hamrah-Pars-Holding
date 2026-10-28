@@ -3,6 +3,7 @@ import type { BusinessGroup } from "@prisma/client";
 import { prisma } from "@/server/db";
 import { saveBusinessGroup, deleteBusinessGroup } from "@/server/admin-actions";
 import { RecordForm, type FieldSpec } from "@/components/admin/record-form";
+import { imagePositionField } from "@/lib/image-fields";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { AdminPageHeader } from "@/components/admin/page-header";
 import { ICON_OPTIONS } from "@/lib/icon-options";
@@ -86,6 +87,7 @@ function groupFields(g?: BusinessGroup): FieldSpec[] {
       hint: "روی کارت گروه در صفحه اصلی، صفحه گروه‌ها و بالای صفحه اختصاصی نمایش داده می‌شود.",
       defaultValue: g?.image,
     },
+    imagePositionField(g?.imagePosition),
     {
       type: "text",
       name: "imageAlt",

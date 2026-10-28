@@ -73,7 +73,16 @@ export default async function AdminLayoutPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const { page } = await searchParams;
-  const active = LAYOUT_PAGES.find((p) => p.slug === page) ?? LAYOUT_PAGES[0];
+  const customPages = await prisma.page.findMany({
+    where: { slug: { notIn: LAYOUT_PAGES.map((item) => item.slug) } },
+    select: { slug: true, title: true },
+    orderBy: { title: "asc" },
+  });
+  const layoutPages = [
+    ...LAYOUT_PAGES,
+    ...customPages.map((item) => ({ slug: item.slug, label: item.title })),
+  ];
+  const active = layoutPages.find((p) => p.slug === page) ?? layoutPages[0];
   const blocks = await prisma.pageBlock.findMany({
     where: { pageSlug: active.slug },
     orderBy: [{ sortOrder: "asc" }, { updatedAt: "asc" }],
@@ -88,7 +97,7 @@ export default async function AdminLayoutPage({
       />
 
       <nav aria-label="انتخاب صفحه" className="mb-6 flex flex-wrap gap-2">
-        {LAYOUT_PAGES.map((item) => (
+        {layoutPages.map((item) => (
           <Link
             key={item.slug}
             href={`/admin/layout?page=${item.slug}`}

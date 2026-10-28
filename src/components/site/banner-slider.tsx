@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { imagePositionCss } from "@/lib/media";
 
 export type BannerSlide = {
   id: string;
@@ -11,6 +12,7 @@ export type BannerSlide = {
   subtitle: string;
   image: string;
   imageAlt: string;
+  imagePosition: string;
   href: string;
   ctaLabel: string;
 };
@@ -78,6 +80,7 @@ export function BannerSlider({ slides }: { slides: BannerSlide[] }) {
                 alt={slide.imageAlt || slide.title}
                 loading={i === 0 ? "eager" : "lazy"}
                 decoding="async"
+                style={{ objectPosition: imagePositionCss(slide.imagePosition) }}
                 className={cn(
                   "absolute inset-0 h-full w-full object-cover transition-transform duration-[9000ms] ease-out",
                   active ? "scale-105" : "scale-100",

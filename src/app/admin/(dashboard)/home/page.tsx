@@ -5,6 +5,7 @@ import { ExternalLink, Layers } from "lucide-react";
 import { getSettings, type SiteSettings } from "@/server/settings";
 import { deleteBanner, saveBanner, saveHero } from "@/server/admin-actions";
 import { RecordForm, type FieldSpec } from "@/components/admin/record-form";
+import { imagePositionField } from "@/lib/image-fields";
 import { AdminPageHeader } from "@/components/admin/page-header";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { prisma } from "@/server/db";
@@ -114,6 +115,7 @@ function bannerFields(b?: HomeBanner): FieldSpec[] {
       hint: "نسبت پیشنهادی ۱۶:۹ و عرض حداقل ۱۶۰۰ پیکسل.",
       defaultValue: b?.image,
     },
+    imagePositionField(b?.imagePosition),
     { type: "text", name: "title", label: "عنوان", required: true, defaultValue: b?.title },
     {
       type: "textarea",

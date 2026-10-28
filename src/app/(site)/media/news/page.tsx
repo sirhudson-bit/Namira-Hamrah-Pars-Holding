@@ -5,6 +5,7 @@ import { getNews } from "@/server/content";
 import { formatJalaliLong } from "@/lib/format";
 import { PageHero, EmptyState } from "@/components/site/ui";
 import { SiteImage } from "@/components/site/site-image";
+import { imagePositionCss } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,7 @@ export default async function NewsListPage() {
                 >
                   <div className="relative h-44 bg-gradient-to-br from-brand-600 to-dark-800">
                     {n.image ? (
-                      <SiteImage src={n.image} alt={n.title} className="h-full w-full object-cover" />
+                      <SiteImage src={n.image} alt={n.title} style={{ objectPosition: imagePositionCss(n.imagePosition) }} className="h-full w-full object-cover" />
                     ) : (
                       <Image src="/images/news-placeholder.svg" alt="" fill className="object-cover opacity-70" sizes="33vw" />
                     )}

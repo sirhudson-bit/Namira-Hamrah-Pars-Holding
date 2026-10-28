@@ -4,6 +4,7 @@ import { getBlogPosts } from "@/server/content";
 import { formatJalaliLong } from "@/lib/format";
 import { PageHero, EmptyState } from "@/components/site/ui";
 import { SiteImage } from "@/components/site/site-image";
+import { imagePositionCss } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ export default async function BlogListPage() {
                 >
                   {p.image ? (
                     <div className="relative h-44 border-b border-line-200 bg-surface-50">
-                      <SiteImage src={p.image} alt={p.title} className="h-full w-full object-cover" />
+                      <SiteImage src={p.image} alt={p.title} style={{ objectPosition: imagePositionCss(p.imagePosition) }} className="h-full w-full object-cover" />
                     </div>
                   ) : null}
                   <div className="flex flex-1 flex-col p-6">

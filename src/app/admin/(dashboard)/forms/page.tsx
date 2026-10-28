@@ -36,10 +36,12 @@ export default async function AdminFormsPage() {
         description="پیام‌های تماس، درخواست‌های همکاری و اعضای خبرنامه."
         action={
           <div className="flex flex-wrap gap-2">
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/api/admin/export?type=messages" className="btn-secondary">
               <Download className="h-4 w-4" aria-hidden />
               خروجی پیام‌ها (CSV)
             </a>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/api/admin/export?type=applications" className="btn-secondary">
               <Download className="h-4 w-4" aria-hidden />
               خروجی رزومه‌ها (CSV)

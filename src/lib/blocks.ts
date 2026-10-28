@@ -7,6 +7,8 @@
  * help text have exactly one home.
  */
 
+import { IMAGE_POSITION_OPTIONS } from "./media";
+
 export type BlockFieldType = "text" | "textarea" | "image" | "select" | "number";
 
 export type BlockField = {
@@ -37,6 +39,11 @@ export type BlockRecord = {
   sortOrder: number;
   visible: boolean;
 };
+
+const IMAGE_POSITION_OPTIONS_FOR_BLOCK = IMAGE_POSITION_OPTIONS.map((option) => ({
+  value: option.value,
+  label: option.label,
+}));
 
 const ALIGN_OPTIONS = [
   { value: "right", label: "راست‌چین" },
@@ -88,6 +95,13 @@ export const BLOCK_DEFS: BlockDef[] = [
     glyph: "▣",
     fields: [
       { name: "image", label: "تصویر", type: "image" },
+      {
+        name: "imagePosition",
+        label: "موقعیت نمایش تصویر",
+        type: "select",
+        options: IMAGE_POSITION_OPTIONS_FOR_BLOCK,
+        hint: "نقطه‌ای از تصویر که در کادر دیده می‌شود.",
+      },
       { name: "caption", label: "شرح تصویر", type: "text" },
       { name: "href", label: "پیوند (اختیاری)", type: "text", placeholder: "/contact" },
       {
@@ -101,7 +115,7 @@ export const BLOCK_DEFS: BlockDef[] = [
         ],
       },
     ],
-    defaults: { ratio: "wide" },
+    defaults: { ratio: "wide", imagePosition: "center" },
   },
   {
     type: "split",
@@ -110,6 +124,12 @@ export const BLOCK_DEFS: BlockDef[] = [
     glyph: "◧",
     fields: [
       { name: "image", label: "تصویر", type: "image" },
+      {
+        name: "imagePosition",
+        label: "موقعیت نمایش تصویر",
+        type: "select",
+        options: IMAGE_POSITION_OPTIONS_FOR_BLOCK,
+      },
       { name: "eyebrow", label: "برچسب", type: "text" },
       { name: "title", label: "تیتر", type: "text" },
       { name: "body", label: "متن", type: "textarea", rows: 6 },

@@ -409,6 +409,25 @@ scripts/
   e2e.mjs            end-to-end verification (npm run verify)
 ```
 
+## WordPress-style content management
+
+- **Pages** (`/admin/pages`): create, edit, duplicate, publish and delete pages. Every page has a
+  rich Markdown body, hero copy/image, SEO fields and a layout of widgets; the body now renders on
+  the public page (above the widget layout). Custom pages are served at `/<slug>`; the built-in
+  routes keep their own slugs and URLs.
+- **Menus** (`/admin/menus`): the header navigation and every footer column are database-backed.
+  Add, rename, reorder, hide or delete items and nested dropdowns; the public header/footer update
+  on the next request. The first visit seeds the old built-in navigation as editable rows.
+- **Image focus** (`موقعیت نمایش تصویر`): every cover image — pages, banners, groups, stores, news,
+  posts and jobs — and the image/split widgets has a selectable `object-position`.
+- **Live editing**: signed-in admins see a «ویرایش زنده» bar on the public site. Turn it on and click
+  a hero heading/eyebrow/lead or a widget title to edit in place; the change is saved through
+  `/api/admin/live-edit` (session-checked, whitelisted text fields) and revalidated. Images and
+  Markdown deliberately stay in the full admin editor.
+- **All page elements** (`/admin/content`): services, organisational units, innovation projects,
+  team members and timeline milestones now have create/edit/delete screens instead of being
+  seed-only.
+
 ## Deployment
 
 Target: Ubuntu VPS, Node 22, pm2 + nginx, SQLite on local disk. Scripts and the

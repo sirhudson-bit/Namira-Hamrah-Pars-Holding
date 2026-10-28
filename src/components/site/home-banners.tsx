@@ -19,6 +19,7 @@ export async function HomeBanners() {
       subtitle: row.subtitle,
       image: imageSrc(row.image),
       imageAlt: row.imageAlt,
+      imagePosition: row.imagePosition,
       href: row.href,
       ctaLabel: row.ctaLabel,
     }))

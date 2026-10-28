@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { mkdir, writeFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -18,7 +19,7 @@ import { toPersianDigits } from "@/lib/format";
 import { extractEmbedUrl } from "@/lib/embed";
 import type { ActionResult } from "@/server/actions";
 import type { MediaItem } from "@/lib/media";
-import { isSafeImageSrc } from "@/lib/media";
+import { imagePositionCss, isSafeImageSrc } from "@/lib/media";
 import { BLOCK_BY_TYPE, newBlockData, parseBlockData } from "@/lib/blocks";
 
 /* ----------------------------- helpers ----------------------------- */
@@ -38,6 +39,10 @@ function bool(formData: FormData, key: string): boolean {
 function img(formData: FormData, key: string): string {
   const v = str(formData, key);
   return isSafeImageSrc(v) ? v : "";
+}
+/** A validated CSS object-position value for a cover image. */
+function pos(formData: FormData, key: string): string {
+  return imagePositionCss(str(formData, key));
 }
 function num(formData: FormData, key: string, fallback = 0): number {
   const v = Number(str(formData, key));
@@ -85,6 +90,7 @@ export async function saveBusinessGroup(
     ctaLabel: str(formData, "ctaLabel"),
     ctaUrl: str(formData, "ctaUrl"),
     image: img(formData, "image"),
+    imagePosition: pos(formData, "imagePosition"),
     imageAlt: str(formData, "imageAlt").slice(0, 160),
     sortOrder: num(formData, "sortOrder"),
     published: bool(formData, "published"),
@@ -145,6 +151,7 @@ export async function saveStore(
     address: opt(formData, "address"),
     email: opt(formData, "email"),
     image: img(formData, "image"),
+    imagePosition: pos(formData, "imagePosition"),
     sortOrder: num(formData, "sortOrder"),
     published: bool(formData, "published"),
   };
@@ -199,6 +206,7 @@ export async function saveNews(
     ...parsed.data,
     body: str(formData, "body"),
     image: img(formData, "image"),
+    imagePosition: pos(formData, "imagePosition"),
     published: bool(formData, "published"),
     publishedAt: dateStr ? new Date(dateStr) : new Date(),
   };
@@ -256,6 +264,7 @@ export async function saveBlogPost(
     ...parsed.data,
     body: str(formData, "body"),
     image: img(formData, "image"),
+    imagePosition: pos(formData, "imagePosition"),
     published: bool(formData, "published"),
     publishedAt: dateStr ? new Date(dateStr) : new Date(),
   };
@@ -311,6 +320,7 @@ export async function saveJob(
     type: opt(formData, "type") ?? "تمام‌وقت",
     requirements: str(formData, "requirements"),
     image: img(formData, "image"),
+    imagePosition: pos(formData, "imagePosition"),
     sortOrder: num(formData, "sortOrder"),
     active: bool(formData, "active"),
   };
@@ -335,6 +345,45 @@ export async function deleteJob(formData: FormData): Promise<void> {
 
 /* ------------------------------- pages ----------------------------- */
 
+const SYSTEM_PAGE_SLUGS = new Set([
+  "home",
+  "about",
+  "business-groups",
+  "stores",
+  "innovation",
+  "services",
+  "units",
+  "media",
+  "contact",
+  "careers",
+  "privacy",
+  "terms",
+  "cookie-policy",
+  "refund-policy",
+]);
+
+const RESERVED_SLUGS = new Set([
+  ...SYSTEM_PAGE_SLUGS,
+  "admin",
+  "api",
+  "uploads",
+  "login",
+  "_next",
+  "favicon.ico",
+  "robots.txt",
+  "sitemap.xml",
+]);
+
+function normalizeSlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 export async function savePage(
   _prev: ActionResult | null,
   formData: FormData,
@@ -342,22 +391,406 @@ export async function savePage(
   await requireAdmin();
   const id = str(formData, "id");
   const title = str(formData, "title");
-  if (!id || !title) return fail("عنوان صفحه الزامی است.");
+  if (!title) return fail("عنوان صفحه الزامی است.");
+
+  const postedSlug = normalizeSlug(str(formData, "slug"));
+  let slug = postedSlug;
+  let existing: { id: string; slug: string } | null = null;
+  if (id) {
+    existing = await prisma.page.findUnique({ where: { id }, select: { id: true, slug: true } });
+    if (!existing) return fail("صفحه پیدا نشد.");
+    // Existing route pages keep their slug: changing it would silently detach
+    // the page from the static route that reads it.
+    slug = SYSTEM_PAGE_SLUGS.has(existing.slug) ? existing.slug : postedSlug || existing.slug;
+  }
+
+  if (!slug) return fail("نشانی صفحه (slug) الزامی است.");
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    return fail("نشانی صفحه فقط می‌تواند شامل حروف کوچک انگلیسی، رقم و خط تیره باشد.", { slug: "نشانی معتبر نیست." });
+  }
+  if (RESERVED_SLUGS.has(slug) && (!existing || existing.slug !== slug)) {
+    return fail("این نشانی برای صفحه‌ای دیگر رزرو شده است.", { slug: "نشانی رزرو شده است." });
+  }
+  const duplicate = await prisma.page.findFirst({ where: { slug, ...(id ? { NOT: { id } } : {}) }, select: { id: true } });
+  if (duplicate) return fail("صفحه‌ای با این نشانی وجود دارد.", { slug: "این نشانی قبلاً استفاده شده است." });
+
   const data = {
     title,
+    slug,
     eyebrow: opt(formData, "eyebrow"),
     subtitle: opt(formData, "subtitle"),
     body: str(formData, "body"),
     image: img(formData, "image"),
+    imagePosition: pos(formData, "imagePosition"),
     seoTitle: opt(formData, "seoTitle"),
     seoDesc: opt(formData, "seoDesc"),
     published: bool(formData, "published"),
   };
-  await prisma.page.update({ where: { id }, data });
-  const slug = str(formData, "slug");
-  revalidatePath(`/${slug}`);
+
+  if (id) {
+    await prisma.page.update({ where: { id }, data });
+    if (existing && existing.slug !== slug) revalidatePath(`/${existing.slug}`);
+  } else {
+    const created = await prisma.page.create({ data });
+    revalidatePath("/admin/pages");
+    revalidatePath(`/${slug}`);
+    redirect(`/admin/pages/${created.id}`);
+  }
   revalidatePath("/admin/pages");
+  revalidatePath(`/${slug}`);
+  revalidatePath("/");
   return { ok: true, message: "صفحه ذخیره شد." };
+}
+
+export async function deletePage(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = str(formData, "id");
+  const page = await prisma.page.findUnique({ where: { id }, select: { slug: true } });
+  if (!page || SYSTEM_PAGE_SLUGS.has(page.slug)) return;
+  await prisma.pageBlock.deleteMany({ where: { pageSlug: page.slug } });
+  await prisma.page.delete({ where: { id } });
+  revalidatePath("/admin/pages");
+  revalidatePath(`/${page.slug}`);
+}
+
+export async function duplicatePage(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = str(formData, "id");
+  const page = await prisma.page.findUnique({ where: { id } });
+  if (!page) return;
+  let slug = `${page.slug}-copy`;
+  for (let n = 2; await prisma.page.findUnique({ where: { slug } }); n += 1) slug = `${page.slug}-copy-${n}`;
+  const copy = await prisma.page.create({
+    data: {
+      slug,
+      title: `${page.title} (کپی)`,
+      eyebrow: page.eyebrow,
+      subtitle: page.subtitle,
+      body: page.body,
+      image: page.image,
+      imagePosition: page.imagePosition,
+      seoTitle: page.seoTitle,
+      seoDesc: page.seoDesc,
+      published: false,
+    },
+  });
+  const blocks = await prisma.pageBlock.findMany({ where: { pageSlug: page.slug } });
+  if (blocks.length > 0) {
+    await prisma.pageBlock.createMany({
+      data: blocks.map((block) => ({
+        pageSlug: slug,
+        type: block.type,
+        data: block.data,
+        sortOrder: block.sortOrder,
+        visible: block.visible,
+      })),
+    });
+  }
+  redirect(`/admin/pages/${copy.id}`);
+}
+
+/* ------------------------------- menus ------------------------------ */
+
+function menuKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function revalidateMenus(): void {
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/menus");
+}
+
+export async function saveMenuItem(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const id = str(formData, "id");
+  const menuId = str(formData, "menuId");
+  const label = str(formData, "label");
+  const href = safeHref(str(formData, "href"));
+  if (!menuId) return fail("منو مشخص نیست.");
+  if (!label) return fail("عنوان آیتم منو الزامی است.", { label: "عنوان الزامی است." });
+  if (!href) return fail("نشانی آیتم منو معتبر نیست.", { href: "نشانی داخلی یا کامل وارد کنید." });
+
+  const menu = await prisma.menu.findUnique({ where: { id: menuId }, select: { id: true } });
+  if (!menu) return fail("منو پیدا نشد.");
+
+  const parentIdRaw = str(formData, "parentId");
+  const parentId = parentIdRaw || null;
+  if (parentId) {
+    if (parentId === id) return fail("یک آیتم نمی‌تواند والد خودش باشد.");
+    const parent = await prisma.menuItem.findFirst({ where: { id: parentId, menuId } });
+    if (!parent) return fail("آیتم والد در همین منو پیدا نشد.");
+  }
+
+  let sortOrder = Number(str(formData, "sortOrder")) || 0;
+  if (!id && sortOrder === 0) {
+    const last = await prisma.menuItem.findFirst({
+      where: { menuId, parentId },
+      orderBy: { sortOrder: "desc" },
+      select: { sortOrder: true },
+    });
+    sortOrder = (last?.sortOrder ?? 0) + 10;
+  }
+  const data = {
+    menuId,
+    parentId,
+    label,
+    href,
+    description: str(formData, "description").slice(0, 200),
+    sortOrder,
+    visible: bool(formData, "visible"),
+    openInNewTab: bool(formData, "openInNewTab"),
+  };
+
+  if (id) await prisma.menuItem.update({ where: { id }, data });
+  else await prisma.menuItem.create({ data });
+
+  revalidateMenus();
+  return { ok: true, message: "آیتم منو ذخیره شد." };
+}
+
+export async function deleteMenuItem(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await prisma.menuItem.delete({ where: { id: str(formData, "id") } }).catch(() => {});
+  revalidateMenus();
+}
+
+export async function moveMenuItem(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = str(formData, "id");
+  const direction = str(formData, "direction") === "up" ? -1 : 1;
+  const item = await prisma.menuItem.findUnique({ where: { id } });
+  if (!item) return;
+  const neighbor = await prisma.menuItem.findFirst({
+    where: {
+      menuId: item.menuId,
+      parentId: item.parentId,
+      sortOrder: direction < 0 ? { lt: item.sortOrder } : { gt: item.sortOrder },
+    },
+    orderBy: { sortOrder: direction < 0 ? "desc" : "asc" },
+  });
+  if (!neighbor) return;
+  await prisma.$transaction([
+    prisma.menuItem.update({ where: { id: item.id }, data: { sortOrder: neighbor.sortOrder } }),
+    prisma.menuItem.update({ where: { id: neighbor.id }, data: { sortOrder: item.sortOrder } }),
+  ]);
+  revalidateMenus();
+}
+
+export async function createMenu(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const title = str(formData, "title");
+  const key = menuKey(str(formData, "key"));
+  if (!title) return fail("عنوان منو الزامی است.");
+  if (!key) return fail("شناسه منو الزامی است (حروف کوچک انگلیسی، رقم و خط تیره).", { key: "شناسه معتبر نیست." });
+  if (await prisma.menu.findUnique({ where: { key } })) return fail("منویی با این شناسه وجود دارد.", { key: "شناسه تکراری است." });
+  await prisma.menu.create({
+    data: {
+      key,
+      title,
+      sortOrder: Number(str(formData, "sortOrder")) || 0,
+    },
+  });
+  revalidateMenus();
+  return { ok: true, message: "منو ساخته شد." };
+}
+
+export async function saveMenu(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const id = str(formData, "id");
+  const title = str(formData, "title");
+  if (!id || !title) return fail("عنوان منو الزامی است.");
+  await prisma.menu.update({ where: { id }, data: { title, sortOrder: Number(str(formData, "sortOrder")) || 0 } });
+  revalidateMenus();
+  return { ok: true, message: "منو ذخیره شد." };
+}
+
+export async function deleteMenu(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = str(formData, "id");
+  const menu = await prisma.menu.findUnique({ where: { id }, select: { key: true } });
+  if (!menu || menu.key === "header") return;
+  await prisma.menu.delete({ where: { id } });
+  revalidateMenus();
+}
+
+/* --------------------- remaining page elements --------------------- */
+
+export async function saveService(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const title = str(formData, "title");
+  const slug = str(formData, "slug");
+  if (!title || !slug) return fail("عنوان و نشانی خدمت الزامی است.");
+  const data = {
+    title,
+    slug,
+    description: str(formData, "description"),
+    icon: opt(formData, "icon") ?? "Sparkles",
+    sortOrder: num(formData, "sortOrder"),
+    published: bool(formData, "published"),
+  };
+  const id = str(formData, "id");
+  try {
+    if (id) await prisma.serviceItem.update({ where: { id }, data });
+    else await prisma.serviceItem.create({ data });
+  } catch {
+    return fail("ذخیره نشد؛ ممکن است نشانی تکراری باشد.");
+  }
+  revalidatePath("/services");
+  revalidatePath("/admin/content");
+  return { ok: true, message: "خدمت ذخیره شد." };
+}
+
+export async function deleteService(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await prisma.serviceItem.delete({ where: { id: str(formData, "id") } }).catch(() => {});
+  revalidatePath("/services");
+  revalidatePath("/admin/content");
+}
+
+export async function saveOrgUnit(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const name = str(formData, "name");
+  const slug = str(formData, "slug");
+  if (!name || !slug) return fail("نام و نشانی واحد الزامی است.");
+  const data = {
+    name,
+    slug,
+    kind: opt(formData, "kind") ?? "offline",
+    description: str(formData, "description"),
+    sortOrder: num(formData, "sortOrder"),
+    published: bool(formData, "published"),
+  };
+  const id = str(formData, "id");
+  try {
+    if (id) await prisma.orgUnit.update({ where: { id }, data });
+    else await prisma.orgUnit.create({ data });
+  } catch {
+    return fail("ذخیره نشد؛ ممکن است نشانی تکراری باشد.");
+  }
+  revalidatePath("/units");
+  revalidatePath("/admin/content");
+  return { ok: true, message: "واحد سازمانی ذخیره شد." };
+}
+
+export async function deleteOrgUnit(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await prisma.orgUnit.delete({ where: { id: str(formData, "id") } }).catch(() => {});
+  revalidatePath("/units");
+  revalidatePath("/admin/content");
+}
+
+export async function saveInnovation(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const title = str(formData, "title");
+  const slug = str(formData, "slug");
+  if (!title || !slug) return fail("عنوان و نشانی پروژه الزامی است.");
+  const data = {
+    title,
+    slug,
+    description: str(formData, "description"),
+    status: opt(formData, "status") ?? "در حال توسعه",
+    sortOrder: num(formData, "sortOrder"),
+    published: bool(formData, "published"),
+  };
+  const id = str(formData, "id");
+  try {
+    if (id) await prisma.innovationProject.update({ where: { id }, data });
+    else await prisma.innovationProject.create({ data });
+  } catch {
+    return fail("ذخیره نشد؛ ممکن است نشانی تکراری باشد.");
+  }
+  revalidatePath("/innovation");
+  revalidatePath("/admin/content");
+  return { ok: true, message: "پروژه نوآوری ذخیره شد." };
+}
+
+export async function deleteInnovation(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await prisma.innovationProject.delete({ where: { id: str(formData, "id") } }).catch(() => {});
+  revalidatePath("/innovation");
+  revalidatePath("/admin/content");
+}
+
+export async function saveTeamMember(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const name = str(formData, "name");
+  const role = str(formData, "role");
+  if (!name || !role) return fail("نام و سمت عضو تیم الزامی است.");
+  const data = {
+    name,
+    role,
+    bio: str(formData, "bio"),
+    sortOrder: num(formData, "sortOrder"),
+    published: bool(formData, "published"),
+  };
+  const id = str(formData, "id");
+  if (id) await prisma.teamMember.update({ where: { id }, data });
+  else await prisma.teamMember.create({ data });
+  revalidatePath("/about");
+  revalidatePath("/admin/content");
+  return { ok: true, message: "عضو تیم ذخیره شد." };
+}
+
+export async function deleteTeamMember(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await prisma.teamMember.delete({ where: { id: str(formData, "id") } }).catch(() => {});
+  revalidatePath("/about");
+  revalidatePath("/admin/content");
+}
+
+export async function saveMilestone(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const year = str(formData, "year");
+  const title = str(formData, "title");
+  if (!year || !title) return fail("سال و عنوان نقطه عطف الزامی است.");
+  const data = {
+    year,
+    title,
+    description: str(formData, "description"),
+    sortOrder: num(formData, "sortOrder"),
+  };
+  const id = str(formData, "id");
+  if (id) await prisma.milestone.update({ where: { id }, data });
+  else await prisma.milestone.create({ data });
+  revalidatePath("/about");
+  revalidatePath("/admin/content");
+  return { ok: true, message: "نقطه عطف ذخیره شد." };
+}
+
+export async function deleteMilestone(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await prisma.milestone.delete({ where: { id: str(formData, "id") } }).catch(() => {});
+  revalidatePath("/about");
+  revalidatePath("/admin/content");
 }
 
 /* ----------------------------- settings ---------------------------- */
@@ -977,7 +1410,7 @@ export async function saveMediaAsset(
 /** Only internal paths or absolute http(s) links are accepted. */
 function safeHref(value: string): string {
   const v = value.trim();
-  if (/^\/(?!\/)/.test(v) || /^https?:\/\//i.test(v)) return v;
+  if (/^\/(?!\/)/.test(v) || /^https?:\/\//i.test(v) || /^(mailto:|tel:)/i.test(v)) return v;
   return "";
 }
 
@@ -995,6 +1428,7 @@ export async function saveBanner(
     title,
     subtitle: str(formData, "subtitle"),
     image,
+    imagePosition: pos(formData, "imagePosition"),
     imageAlt: str(formData, "imageAlt").slice(0, 160),
     href: safeHref(str(formData, "href")),
     ctaLabel: str(formData, "ctaLabel"),
