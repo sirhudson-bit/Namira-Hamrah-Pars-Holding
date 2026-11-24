@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
-import { getSettings } from "@/server/settings";
+import { getPublicSettings as getSettings } from "@/server/settings";
 import { toLatinDigits } from "@/lib/format";
 import { PageBuilder } from "@/components/site/page-builder";
 import { PageHero } from "@/components/site/ui";

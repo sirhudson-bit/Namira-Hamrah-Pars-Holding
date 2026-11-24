@@ -108,6 +108,7 @@ export const ADMIN_NAV: { items: AdminNavItem[] }[] = [
           { label: "سئو", href: "/admin/settings?tab=seo" },
           { label: "نمایش و خوانایی", href: "/admin/settings?tab=reading" },
           { label: "فونت", href: "/admin/settings?tab=fonts" },
+          { label: "چت‌بات", href: "/admin/settings?tab=chat" },
           { label: "لوگو و برند", href: "/admin/settings?tab=branding" },
           { label: "حالت تعمیر", href: "/admin/settings?tab=maintenance" },
           { label: "حساب کاربری", href: "/admin/settings?tab=account" },

@@ -28,7 +28,13 @@ export type GroupCard = {
  * size. The arrows are optional — the track is a plain scroll container, so
  * trackpads, touch, keyboard and the scrollbar all work without JavaScript.
  */
-export function GroupScroller({ groups }: { groups: GroupCard[] }) {
+export function GroupScroller({
+  groups,
+  hint,
+}: {
+  groups: GroupCard[];
+  hint?: string;
+}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0);
   const [canBack, setCanBack] = useState(false);
@@ -68,9 +74,7 @@ export function GroupScroller({ groups }: { groups: GroupCard[] }) {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between gap-4">
-        <p className="text-[11px] text-ink-500">
-          {groups.length.toLocaleString("fa-IR")} گروه · برای دیدن همه، بکشید
-        </p>
+        <p className="text-[11px] text-ink-500">{hint}</p>
         <div className="flex items-center gap-2">
           <button
             type="button"

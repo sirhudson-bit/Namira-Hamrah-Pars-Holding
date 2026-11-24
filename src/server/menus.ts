@@ -1,6 +1,8 @@
 import { cache } from "react";
 import { prisma } from "@/server/db";
 import { FOOTER_NAV, MAIN_NAV, type NavChild, type NavItem } from "@/lib/site";
+import { getLocale } from "@/server/locale";
+import { localizeRows } from "@/server/translate";
 
 /**
  * Default menus, used to seed the database the first time the menu editor is
@@ -34,6 +36,8 @@ export type MenuWithItems = {
     label: string;
     href: string;
     description: string;
+    image: string;
+    imageAlt: string;
     sortOrder: number;
     visible: boolean;
     openInNewTab: boolean;
@@ -105,39 +109,53 @@ function buildHeader(items: MenuWithItems["items"]): NavItem[] {
     label: item.label,
     href: item.href,
     ...(item.description ? { description: item.description } : {}),
+    ...(item.image ? { image: item.image } : {}),
+    ...(item.imageAlt ? { imageAlt: item.imageAlt } : {}),
   });
   return (byParent.get(null) ?? []).map((item) => {
     const children = (byParent.get(item.id) ?? []).map(toChild);
     return {
       label: item.label,
       href: item.href,
+      ...(item.image ? { image: item.image } : {}),
+      ...(item.imageAlt ? { imageAlt: item.imageAlt } : {}),
       ...(children.length > 0 ? { children } : {}),
     };
   });
 }
 
 export const getHeaderNav = cache(async (): Promise<NavItem[]> => {
+  const locale = await getLocale();
   const menu = await prisma.menu.findUnique({
     where: { key: "header" },
     include: { items: { orderBy: [{ sortOrder: "asc" }, { label: "asc" }] } },
   });
   if (!menu) return MAIN_NAV;
-  return buildHeader(menu.items);
+  const items = await localizeRows(menu.items, ["label", "description"], locale);
+  return buildHeader(items);
 });
 
 export const getFooterMenus = cache(async (): Promise<FooterColumn[]> => {
+  const locale = await getLocale();
   const menus = await prisma.menu.findMany({
     where: { key: { not: "header" } },
     orderBy: [{ sortOrder: "asc" }, { key: "asc" }],
     include: { items: { where: { parentId: null }, orderBy: [{ sortOrder: "asc" }, { label: "asc" }] } },
   });
   if (menus.length === 0) return FOOTER_NAV;
-  return menus
-    .map((menu) => ({
+  const localized = await Promise.all(
+    menus.map(async (menu) => ({
       title: menu.title,
-      items: menu.items.filter((item) => item.visible).map((item) => ({ label: item.label, href: item.href })),
-    }))
-    .filter((column) => column.items.length > 0);
+      items: await localizeRows(menu.items.filter((item) => item.visible), ["label"], locale),
+    })),
+  );
+  const columns = await Promise.all(
+    localized.map(async (column) => ({
+      title: (await localizeRows([{ title: column.title }], ["title"], locale))[0].title,
+      items: column.items.map((item) => ({ label: item.label, href: item.href })),
+    })),
+  );
+  return columns.filter((column) => column.items.length > 0);
 });
 
 export async function getMenusForAdmin(): Promise<MenuWithItems[]> {

@@ -10,8 +10,10 @@ import {
 } from "@/components/site/social-icons";
 import type { SiteSettings } from "@/server/settings";
 import type { FooterColumn } from "@/server/menus";
+import { getChrome } from "@/server/chrome";
 
-export function Footer({ settings, menus }: { settings: SiteSettings; menus: FooterColumn[] }) {
+export async function Footer({ settings, menus }: { settings: SiteSettings; menus: FooterColumn[] }) {
+  const { labels } = await getChrome();
   const socials = [
     { href: settings.instagram, label: "اینستاگرام", Icon: InstagramIcon },
     { href: settings.linkedin, label: "لینکدین", Icon: LinkedinIcon },
@@ -34,8 +36,7 @@ export function Footer({ settings, menus }: { settings: SiteSettings; menus: Foo
           <div>
             <Logo src={settings.logo_path || undefined} />
             <p className="mt-6 max-w-sm text-sm leading-8 text-ink-500">
-              {settings.legal_name} — مجموعه‌ای چند‌گروهی با تمرکز بر خرده‌فروشی دیجیتال، توزیع و
-              نوآوری فناورانه.
+              {settings.legal_name} — {labels.footerBlurb}
             </p>
             <ul className="mt-7 space-y-3.5 text-[13px] text-ink-700">
               <li className="flex items-start gap-2.5">
@@ -80,7 +81,7 @@ export function Footer({ settings, menus }: { settings: SiteSettings; menus: Foo
 
         <div className="mt-16 flex flex-col items-center justify-between gap-5 border-t border-line-200 pt-7 sm:flex-row">
           <p className="text-[11px] text-ink-500">
-            © {currentJalaliYear()} {settings.legal_name}. همه حقوق محفوظ است.
+            © {currentJalaliYear()} {settings.legal_name}. {labels.allRights}
           </p>
           <div className="flex items-center gap-5">
             {socials.map(({ href, label, Icon }) => (
@@ -95,7 +96,10 @@ export function Footer({ settings, menus }: { settings: SiteSettings; menus: Foo
                 <Icon className="h-[18px] w-[18px]" aria-hidden />
               </a>
             ))}
-            <CookieSettingsButton className="text-[11px] text-ink-500 underline underline-offset-4 hover:text-accent" />
+            <CookieSettingsButton
+              label={labels.cookieSettings}
+              className="text-[11px] text-ink-500 underline underline-offset-4 hover:text-accent"
+            />
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Video } from "lucide-react";
 import { getNews, getBlogPosts } from "@/server/content";
-import { getSettings } from "@/server/settings";
+import { getPublicSettings as getSettings } from "@/server/settings";
 import { prisma } from "@/server/db";
 import { formatJalaliLong } from "@/lib/format";
 import { PageBuilder } from "@/components/site/page-builder";

@@ -62,7 +62,6 @@ export async function PageHero({
   const lead = copy?.description || description;
   // A page-level backdrop wins over the site-wide one set in /admin/settings.
   const backdrop = imageSrc(copy?.image) || settings.page_hero_bg;
-  const live = slug ? { "data-live-page": slug } : {};
 
   return (
     <section
@@ -96,15 +95,15 @@ export async function PageHero({
           {kicker ? (
             <p className="kicker inline-flex items-center gap-3">
               <span className="h-px w-8 bg-brand-500/60" aria-hidden />
-              <span {...live} data-live-field={slug ? "eyebrow" : undefined}>{kicker}</span>
+              <span>{kicker}</span>
             </p>
           ) : null}
           {/* ink-900, not white: this hero sits on the themed page canvas, which
               is light in light mode — a hard-coded white heading disappeared
               there. */}
-          <h1 className="display-1 mt-5 max-w-4xl text-ink-900" {...live} data-live-field={slug ? "title" : undefined}>{heading}</h1>
+          <h1 className="display-1 mt-5 max-w-4xl text-ink-900">{heading}</h1>
           {lead ? (
-            <p className="mt-6 max-w-2xl text-base leading-9 text-ink-500" {...live} data-live-field={slug ? "subtitle" : undefined}>{lead}</p>
+            <p className="mt-6 max-w-2xl text-base leading-9 text-ink-500">{lead}</p>
           ) : null}
         </Reveal>
       </div>
@@ -117,20 +116,12 @@ export function SectionHeading({
   title,
   description,
   align = "right",
-  livePage,
-  liveBlock,
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
   align?: "right" | "center";
-  /** When set, the heading becomes editable in the on-site live editor. */
-  livePage?: string;
-  liveBlock?: string;
 }) {
-  const live = livePage
-    ? { "data-live-page": livePage, ...(liveBlock ? { "data-live-block": liveBlock } : {}) }
-    : {};
   return (
     <Reveal
       className={cn("mb-12 max-w-2xl", align === "center" && "mx-auto text-center")}
@@ -143,12 +134,12 @@ export function SectionHeading({
           )}
         >
           <span className="h-px w-8 bg-brand-500/60" aria-hidden />
-          <span {...live} data-live-field={livePage ? "eyebrow" : undefined}>{eyebrow}</span>
+          <span>{eyebrow}</span>
         </p>
       ) : null}
-      <h2 className="display-2 mt-4 text-ink-900" {...live} data-live-field={livePage ? "title" : undefined}>{title}</h2>
+      <h2 className="display-2 mt-4 text-ink-900">{title}</h2>
       {description ? (
-        <p className="mt-4 text-base leading-9 text-ink-500" {...live} data-live-field={livePage ? "description" : undefined}>{description}</p>
+        <p className="mt-4 text-base leading-9 text-ink-500">{description}</p>
       ) : null}
     </Reveal>
   );

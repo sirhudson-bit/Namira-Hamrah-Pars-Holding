@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Wrench } from "lucide-react";
-import { getSettings } from "@/server/settings";
+import { getPublicSettings } from "@/server/settings";
 import { getFooterMenus, getHeaderNav } from "@/server/menus";
+import { getChrome } from "@/server/chrome";
 import { getCurrentUser } from "@/server/auth";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
@@ -11,14 +12,19 @@ import { CookieConsent } from "@/components/site/cookie-consent";
 import { ConsentGatedAnalytics } from "@/components/site/analytics";
 import { BackToTop } from "@/components/site/back-to-top";
 import { ScrollProgress } from "@/components/motion/scroll-progress";
-import { LiveEditBar } from "@/components/site/live-edit-bar";
+import { AiChat } from "@/components/site/ai-chat";
 
 export default async function SiteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [settings, nav, footerMenus] = await Promise.all([getSettings(), getHeaderNav(), getFooterMenus()]);
+  const [settings, nav, footerMenus, chrome] = await Promise.all([
+    getPublicSettings(),
+    getHeaderNav(),
+    getFooterMenus(),
+    getChrome(),
+  ]);
   const maintenance = settings.maintenance_mode === "true";
   const user = await getCurrentUser();
 
@@ -61,11 +67,13 @@ export default async function SiteLayout({
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:right-4 focus:top-4 focus:z-50 focus:rounded-btn focus:bg-brand-700 focus:px-4 focus:py-2 focus:text-sm focus:text-white"
       >
-        پرش به محتوای اصلی
+        {chrome.labels.skipToContent}
       </a>
       <ScrollProgress />
       <Header
         nav={nav}
+        labels={chrome.labels}
+        locale={chrome.locale}
         settings={{
           site_name: settings.site_name,
           logo_path: settings.logo_path,
@@ -81,7 +89,12 @@ export default async function SiteLayout({
       <NewsletterBand />
       <Footer settings={settings} menus={footerMenus} />
       <BackToTop />
-      <LiveEditBar isAdmin={Boolean(user)} />
+      <AiChat
+        enabled={settings.chat_enabled !== "false"}
+        title={settings.chat_title}
+        welcome={settings.chat_welcome}
+        labels={chrome.labels}
+      />
       <CookieConsent />
       <ConsentGatedAnalytics gaId={gaId} />
     </div>

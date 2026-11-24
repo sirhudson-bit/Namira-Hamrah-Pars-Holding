@@ -149,6 +149,18 @@ async function main() {
     /<canvas[^>]*class="[^"]*pointer-events-none/.test(home),
   );
   check("home is RTL", home.includes('dir="rtl"'));
+  check(
+    "home ships the assistant launcher",
+    home.includes("گفتگو با دستیار نامیرا"),
+  );
+
+  const english = await (
+    await fetch(`${BASE}/`, { headers: { cookie: "namira_locale=en" } })
+  ).text();
+  check(
+    "locale cookie switches the document to LTR",
+    english.includes('lang="en"') && english.includes('dir="ltr"'),
+  );
   check("home ships the built-in app icon", home.includes("icon.svg"));
 
   // ---------- contact form ----------
@@ -197,6 +209,11 @@ async function main() {
     await fetch(`${BASE}/admin/settings?tab=branding`, { headers: { cookie } })
   ).text();
   check("settings exposes a branding uploader", settingsHtml.includes("لوگوی اصلی"));
+
+  const chatSettings = await (
+    await fetch(`${BASE}/admin/settings?tab=chat`, { headers: { cookie } })
+  ).text();
+  check("settings exposes the assistant tab", chatSettings.includes("دستیار گفتگو"));
   // Target the logo uploader specifically (value="logo", not "logo_light").
   const brandFields = extractActionFields(settingsHtml, /value="logo"/);
   const fd = new FormData();

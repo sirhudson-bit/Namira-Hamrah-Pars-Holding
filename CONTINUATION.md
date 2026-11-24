@@ -577,3 +577,39 @@ unchanged.
 **Decisions not to reopen.** The cover deliberately does not use the old fixed `.sphere`; the admin
 rail is deliberately dark in both themes; settings deliberately save per tab; the chapter rail is
 desktop-only (`xl`) because at phone widths it collided with the cards.
+
+## Session 12 — assistant, menu images, live multilingual translation
+
+**Requested.** Move the cover orb to the bottom-left as a working AI chat assistant; remove the
+in-place page editor (it never worked); make menu images editable; make the site multilingual with
+translation that follows the Persian content live.
+
+**Assistant.** `components/site/ai-chat.tsx` is the orb, now a launcher at
+`bottom: calc(1.25rem + var(--consent-h))` so the consent strip never covers it. The panel is a
+plain transcript over `POST /api/chat` (settings gate + 24 requests / 5 min per IP + 12-turn cap,
+nothing stored). `server/assistant.ts` builds knowledge from the live rows and answers from it when
+no model key exists; the matcher splits the knowledge into `##` sections, normalizes ZWNJ/Arabic
+letters, and lists a section when its title matches the question. `OPENAI_API_KEY` (optional) turns
+on model answers. Copy, toggle and extra knowledge live in **تنظیمات → چت‌بات**.
+
+**Live editing removed.** `components/site/live-edit-bar.tsx`, `app/api/admin/live-edit/route.ts`
+and all `data-live-*` hooks are gone; the hero/widget props no longer accept edit handlers.
+
+**Menu images.** `MenuItem.image` / `imageAlt` (schema prisma db push), editable in
+`/admin/menus`, carried through `NavItem`/`NavChild`, used as the index preview and the dropdown
+thumbnail, with the old topic photos as fallback.
+
+**Multilingual.** `namira_locale` cookie → `server/locale.ts` → every public reader localizes via
+`server/translate.ts` (`translateMany`, `translateLong`, `localizeRows`, `localizeTree`). Cache table
+`Translation` keyed by `sha256(locale + "\n" + source)`; missing strings are batched eight at a time
+behind `###n###` markers, written back with `upsert`, and failures keep the Persian text. Provider is
+`translate.googleapis.com` unless `TRANSLATE_ENDPOINT` is set. Home-page editorial copy moved into
+`HOME_COPY` and goes through `localizeTree` together with `CHAPTERS`, `PILLARS`, `VALUE_CHAIN`;
+client chrome strings come from `server/chrome.ts` so header, index, footer, newsletter and the
+assistant translate with the content. Admin stays Persian RTL (`dir="rtl"` on the dashboard shell and
+the login page).
+
+**Known gaps.** The cookie-consent banner and the contact/newsletter form microcopy are still
+Persian-only (legal text was left in the source language). Assistant answers are written in Persian
+even when the interface is English. The translation provider is a public endpoint; if it is blocked
+from the server, pages fall back to Persian rather than failing.

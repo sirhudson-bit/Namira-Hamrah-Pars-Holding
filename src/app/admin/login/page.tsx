@@ -24,7 +24,7 @@ export default async function AdminLoginPage() {
   const settings = await getSettings();
 
   return (
-    <main className="grid min-h-screen place-items-center bg-dark-900 p-4">
+    <main className="grid min-h-screen place-items-center bg-dark-900 p-4" dir="rtl" lang="fa">
       <div className="w-full max-w-md">
         <div className="mb-6 flex justify-center">
           <Logo

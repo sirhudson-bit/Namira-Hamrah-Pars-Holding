@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Cookie } from "lucide-react";
 import {
@@ -20,6 +20,7 @@ export function CookieConsent() {
   const [expanded, setExpanded] = useState(false);
   const [analytics, setAnalytics] = useState(false);
   const [forceOpen, setForceOpen] = useState(false);
+  const bannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const current = readConsent();
@@ -49,6 +50,28 @@ export function CookieConsent() {
 
   const visible = forceOpen || (state ? !state.decided : false);
 
+  /**
+   * Publishes the banner height as `--consent-h`. Floating controls (the chat
+   * launcher) offset themselves by it, so the consent strip never sits on top
+   * of them — and the gap disappears the moment the visitor decides.
+   */
+  useEffect(() => {
+    const root = document.documentElement;
+    const banner = bannerRef.current;
+    if (!visible || !banner) {
+      root.style.setProperty("--consent-h", "0px");
+      return;
+    }
+    const publish = () => root.style.setProperty("--consent-h", `${banner.offsetHeight}px`);
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(banner);
+    return () => {
+      observer.disconnect();
+      root.style.setProperty("--consent-h", "0px");
+    };
+  }, [visible]);
+
   const decide = (value: boolean) => {
     const next = writeConsent(value);
     setState(next);
@@ -59,6 +82,7 @@ export function CookieConsent() {
 
   return (
     <div
+      ref={bannerRef}
       role="dialog"
       aria-modal="false"
       aria-label="رضایت استفاده از کوکی"
@@ -141,14 +165,14 @@ export function CookieConsent() {
 }
 
 /** Small footer affordance that re-opens the banner so consent can change. */
-export function CookieSettingsButton({ className }: { className?: string }) {
+export function CookieSettingsButton({ className, label = "تنظیمات کوکی" }: { className?: string; label?: string }) {
   return (
     <button
       type="button"
       onClick={() => window.dispatchEvent(new Event("namira:consent-open"))}
       className={className}
     >
-      تنظیمات کوکی
+      {label}
     </button>
   );
 }

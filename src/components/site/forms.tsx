@@ -285,7 +285,16 @@ export function ApplicationForm({ positions }: { positions: string[] }) {
   );
 }
 
-export function NewsletterForm() {
+export function NewsletterForm({
+  labels = {
+    join: "عضویت در خبرنامه",
+    consentPrefix: "موافقم ایمیل‌های خبرنامه را دریافت کنم و با",
+    consentSuffix: "موافقم.",
+    privacy: "حریم خصوصی",
+  },
+}: {
+  labels?: { join: string; consentPrefix: string; consentSuffix: string; privacy: string };
+} = {}) {
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(
     submitNewsletter,
     null,
@@ -312,7 +321,7 @@ export function NewsletterForm() {
         </div>
         <button type="submit" disabled={pending} className="btn-primary shrink-0">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
-          عضویت در خبرنامه
+          {labels.join}
         </button>
       </div>
       <Consent
@@ -321,11 +330,11 @@ export function NewsletterForm() {
         error={e.consent}
         label={
           <>
-            موافقم ایمیل‌های خبرنامه را دریافت کنم و با{" "}
+            {labels.consentPrefix}{" "}
             <Link href="/privacy" className="font-medium text-accent underline underline-offset-4">
-              حریم خصوصی
+              {labels.privacy}
             </Link>{" "}
-            موافقم.
+            {labels.consentSuffix}
           </>
         }
       />

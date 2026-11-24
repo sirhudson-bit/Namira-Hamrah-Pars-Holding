@@ -50,6 +50,19 @@ function itemFields(menu: MenuWithItems, item?: MenuWithItems["items"][number]):
       hint: "در منوی کشویی دسکتاپ زیر عنوان نمایش داده می‌شود.",
     },
     { type: "number", name: "sortOrder", label: "ترتیب", defaultValue: item?.sortOrder ?? 0 },
+    {
+      type: "image",
+      name: "image",
+      label: "تصویر این آیتم",
+      hint: "در فهرست تمام‌صفحه به‌عنوان پیش‌نمایش همین بخش نمایش داده می‌شود. خالی بماند، تصویر پیش‌فرض مسیر استفاده می‌شود.",
+      defaultValue: item?.image,
+    },
+    {
+      type: "text",
+      name: "imageAlt",
+      label: "متن جایگزین تصویر",
+      defaultValue: item?.imageAlt,
+    },
     { type: "checkbox", name: "visible", label: "نمایش در سایت", defaultChecked: item?.visible ?? true },
     {
       type: "checkbox",
@@ -170,6 +183,18 @@ export default async function AdminMenusPage({
                       <span className="w-5 text-[10px] tabular-nums text-ink-400">
                         {String(index + 1).padStart(2, "0")}
                       </span>
+                      {item.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.image}
+                          alt={item.imageAlt || item.label}
+                          className="h-9 w-12 shrink-0 rounded border border-line-200 object-cover"
+                        />
+                      ) : (
+                        <span className="flex h-9 w-12 shrink-0 items-center justify-center rounded border border-dashed border-line-200 text-[9px] text-ink-400">
+                          بی‌تصویر
+                        </span>
+                      )}
                       <div className={cn("min-w-0 flex-1", item.parentId && "ps-5")}>
                         <Link
                           href={`/admin/menus?menu=${active.key}&item=${item.id}`}

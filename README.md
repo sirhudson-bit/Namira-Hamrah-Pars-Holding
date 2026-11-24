@@ -470,13 +470,47 @@ scripts/
   on the next request. The first visit seeds the old built-in navigation as editable rows.
 - **Image focus** (`موقعیت نمایش تصویر`): every cover image — pages, banners, groups, stores, news,
   posts and jobs — and the image/split widgets has a selectable `object-position`.
-- **Live editing**: signed-in admins see a «ویرایش زنده» bar on the public site. Turn it on and click
-  a hero heading/eyebrow/lead or a widget title to edit in place; the change is saved through
-  `/api/admin/live-edit` (session-checked, whitelisted text fields) and revalidated. Images and
-  Markdown deliberately stay in the full admin editor.
-- **All page elements** (`/admin/content`): services, organisational units, innovation projects,
-  team members and timeline milestones now have create/edit/delete screens instead of being
+- **Menu images** (`/admin/menus`): each item can carry its own photograph and alt text. That image
+  is the preview shown in the full-screen index when the item is hovered, and a thumbnail in the
+  header dropdown, so navigation art is editable without touching code. Items without an image
+  fall back to the bundled topic photographs.
+- **All page elements** (`/admin/site-content`): services, organisational units, innovation
+  projects, team members and timeline milestones have create/edit/delete screens instead of being
   seed-only.
+
+## Multilingual, translated live
+
+The site is written once in Persian — every database row and every UI string — and translated on
+the way out for the locale the visitor picks in the header (فارسی / English / العربية).
+
+- **Switching** sets `namira_locale` and refreshes; the root layout applies `lang`/`dir` (English is
+  LTR) and every server component reads the same locale, so routes are unchanged and links stay
+  shareable.
+- **What is translated**: business groups, stores, services, units, innovation projects, news and
+  blog posts (body included), jobs, team and milestones, page copy and SEO fields, editable
+  settings shown to visitors (hero, hours, address, chat copy), menu labels, and the interface
+  strings of the header, index, footer, newsletter band, assistant and home-page chapters.
+- **Cache, not per-request cost**: `Translation` stores `sha256(locale + source) → target`. Editing
+  a Persian field changes the hash, so only that string is translated again. A provider outage
+  falls back to the Persian text instead of blanking a page.
+- **Provider**: `https://translate.googleapis.com` by default (no key). Override with
+  `TRANSLATE_ENDPOINT` to point at another gtx-compatible service.
+- The admin panel is always Persian RTL — the locale of a visitor never changes the back office.
+
+## Site assistant
+
+A chat launcher sits in the bottom-left corner of every public page (it is the animated orb that
+used to decorate the cover, moved where a support button belongs).
+
+- `/api/chat` is rate-limited per IP, caps the transcript, stores nothing and is skipped entirely
+  when `chat_enabled` is off.
+- Answers are grounded in the site: `buildKnowledge()` reads groups, stores, services, jobs, pages,
+  news and the optional «دانش تکمیلی» text from settings. The fallback matcher is section-aware, so
+  «گروه‌های کسب‌وکار کدام‌اند؟» lists the groups and contact questions return the real phone and
+  address — it never invents either.
+- Set `OPENAI_API_KEY` (and optionally `OPENAI_BASE_URL` / `OPENAI_MODEL`) to answer with a model
+  instead; without a key the grounded matcher replies, so the widget works on a fresh install.
+- Everything the assistant says and does is editable under **تنظیمات → چت‌بات**.
 - **Professional editor**: page bodies use `@mdxeditor/editor` — a ready-made Lexical/Markdown
   WYSIWYG with a Persian toolbar (headings, bold/italic/underline, inline and block code, links,
   lists, tables, images, thematic breaks, undo/redo), Markdown shortcuts, a source/diff mode and

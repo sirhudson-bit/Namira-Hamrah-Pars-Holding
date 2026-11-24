@@ -551,6 +551,8 @@ export async function saveMenuItem(
     label,
     href,
     description: str(formData, "description").slice(0, 200),
+    image: img(formData, "image"),
+    imageAlt: str(formData, "imageAlt").slice(0, 200),
     sortOrder,
     visible: bool(formData, "visible"),
     openInNewTab: bool(formData, "openInNewTab"),
@@ -827,10 +829,13 @@ const EDITABLE_SETTING_KEYS = [
   "maintenance_message",
   "font_family",
   "heading_font_family",
+  "chat_title",
+  "chat_welcome",
+  "chat_extra_knowledge",
 ];
 
 /** Keys posted by a checkbox ("on"/"") rather than a text field. */
-const CHECKBOX_SETTING_KEYS = new Set(["analytics_enabled", "maintenance_mode"]);
+const CHECKBOX_SETTING_KEYS = new Set(["analytics_enabled", "maintenance_mode", "chat_enabled"]);
 
 /** Keys whose stored form must be a Persian-numeral string. */
 const PERSIAN_NUMBER_KEYS = new Set([

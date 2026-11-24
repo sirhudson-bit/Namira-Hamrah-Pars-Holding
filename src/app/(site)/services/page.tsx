@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Phone } from "lucide-react";
 import { getServices, getStores } from "@/server/content";
-import { getSettings } from "@/server/settings";
+import { getPublicSettings as getSettings } from "@/server/settings";
 import { toLatinDigits } from "@/lib/format";
 import { PageBuilder } from "@/components/site/page-builder";
 import { PageHero, SectionHeading } from "@/components/site/ui";

@@ -6,12 +6,15 @@ import { usePathname } from "next/navigation";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { ArrowLeft, Phone } from "lucide-react";
 import type { NavItem } from "@/lib/site";
+import type { Locale } from "@/lib/i18n";
 import { toLatinDigits } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/site/logo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { LanguageSwitcher } from "@/components/site/language-switcher";
 import { MenuOverlay } from "@/components/site/menu-overlay";
 import { EASE } from "@/components/motion/reveal";
+import type { ChromeLabels } from "@/server/chrome";
 import type { HeaderSettings } from "@/server/settings";
 
 /**
@@ -22,7 +25,17 @@ import type { HeaderSettings } from "@/server/settings";
  * section and its children, plus contact details — lives in the index, which is
  * the navigation model of this design rather than a fallback menu.
  */
-export function Header({ settings, nav }: { settings: HeaderSettings; nav: NavItem[] }) {
+export function Header({
+  settings,
+  nav,
+  labels,
+  locale,
+}: {
+  settings: HeaderSettings;
+  nav: NavItem[];
+  labels: ChromeLabels;
+  locale: Locale;
+}) {
   const pathname = usePathname();
   const [indexOpen, setIndexOpen] = useState(false);
   const [compact, setCompact] = useState(false);
@@ -105,13 +118,14 @@ export function Header({ settings, nav }: { settings: HeaderSettings; nav: NavIt
           </nav>
 
           <div className="flex items-center gap-2">
+            <LanguageSwitcher locale={locale} label={labels.language} />
             <ThemeToggle className="hidden md:inline-flex" />
             <Link
               href="/contact"
               className="hidden items-center gap-1.5 rounded-full bg-brand-700 px-4 py-2.5 text-[12.5px] font-medium text-white transition-all duration-200 hover:bg-brand-800 hover:shadow-glow sm:inline-flex"
             >
-              تماس با ما
-              <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+              {labels.contact}
+              <ArrowLeft className="h-3.5 w-3.5 ltr:rotate-180" aria-hidden />
             </Link>
 
             {/* The index trigger: a dot lattice that mirrors the site's grid. */}
@@ -120,7 +134,7 @@ export function Header({ settings, nav }: { settings: HeaderSettings; nav: NavIt
               onClick={() => setIndexOpen(true)}
               aria-expanded={indexOpen}
               aria-haspopup="dialog"
-              aria-label="فهرست سایت"
+              aria-label={labels.indexAria}
               className="group inline-flex h-11 items-center gap-2.5 rounded-full border border-line-200 bg-surface/70 pe-3 ps-3 backdrop-blur transition-all duration-300 hover:border-brand-500/50 hover:bg-surface-100 sm:pe-4"
             >
               <span
@@ -131,7 +145,9 @@ export function Header({ settings, nav }: { settings: HeaderSettings; nav: NavIt
                   <span key={cell} className="rounded-[1px] bg-current" />
                 ))}
               </span>
-              <span className="hidden text-[12px] font-semibold text-ink-900 sm:inline">فهرست</span>
+              <span className="hidden text-[12px] font-semibold text-ink-900 sm:inline">
+                {labels.index}
+              </span>
             </button>
           </div>
         </div>
@@ -141,6 +157,8 @@ export function Header({ settings, nav }: { settings: HeaderSettings; nav: NavIt
         open={indexOpen}
         onClose={() => setIndexOpen(false)}
         nav={nav}
+        labels={labels}
+        locale={locale}
         siteName={settings.site_name}
         phone={settings.phone}
         email={settings.email}

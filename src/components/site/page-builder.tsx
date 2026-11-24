@@ -56,8 +56,6 @@ export async function PageBuilder({ slug }: { slug: string }) {
                   title={data.title || ""}
                   description={data.description || undefined}
                   align={data.align === "center" ? "center" : "right"}
-                  livePage={slug}
-                  liveBlock={block.id}
                 />
               </div>
             </section>
@@ -70,7 +68,7 @@ export async function PageBuilder({ slug }: { slug: string }) {
             <section key={key} className="section">
               <div className="container-prose">
                 {data.title ? (
-                  <h2 className="display-3 mb-6 text-ink-900" data-live-page={slug} data-live-block={block.id} data-live-field="title">
+                  <h2 className="display-3 mb-6 text-ink-900">
                     {data.title}
                   </h2>
                 ) : null}
@@ -99,7 +97,7 @@ export async function PageBuilder({ slug }: { slug: string }) {
                   <SiteImage src={src} alt={data.caption || ""} className="h-full w-full object-cover" style={{ objectPosition: imagePositionCss(data.imagePosition) }} />
                 </div>
                 {data.caption ? (
-                  <figcaption className="mt-3 text-center text-xs text-ink-500" data-live-page={slug} data-live-block={block.id} data-live-field="caption">{data.caption}</figcaption>
+                  <figcaption className="mt-3 text-center text-xs text-ink-500">{data.caption}</figcaption>
                 ) : null}
               </figure>
             </section>
@@ -113,14 +111,14 @@ export async function PageBuilder({ slug }: { slug: string }) {
             <section key={key} className="section">
               <div className="container grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
                 <div className={imageFirst ? "lg:order-2" : "lg:order-1"}>
-                  {data.eyebrow ? <p className="kicker" data-live-page={slug} data-live-block={block.id} data-live-field="eyebrow">{data.eyebrow}</p> : null}
-                  {data.title ? <h2 className="display-2 mt-4 text-ink-900" data-live-page={slug} data-live-block={block.id} data-live-field="title">{data.title}</h2> : null}
+                  {data.eyebrow ? <p className="kicker">{data.eyebrow}</p> : null}
+                  {data.title ? <h2 className="display-2 mt-4 text-ink-900">{data.title}</h2> : null}
                   <div
                     className="prose-page mt-5"
                     dangerouslySetInnerHTML={{ __html: renderMarkdown(data.body || "") }}
                   />
                   {data.ctaLabel && data.ctaHref ? (
-                    <Link href={data.ctaHref} className="btn-primary mt-6" data-live-page={slug} data-live-block={block.id} data-live-field="ctaLabel">
+                    <Link href={data.ctaHref} className="btn-primary mt-6">
                       {data.ctaLabel}
                       <ArrowLeft className="h-4 w-4" aria-hidden />
                     </Link>

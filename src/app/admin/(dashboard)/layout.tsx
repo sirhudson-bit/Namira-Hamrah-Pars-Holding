@@ -27,7 +27,7 @@ export default async function AdminDashboardLayout({
   await ensureMenus();
 
   return (
-    <div className="admin-shell min-h-screen">
+    <div className="admin-shell min-h-screen" dir="rtl" lang="fa">
       <AdminBar user={user} />
       <div className="flex min-h-[calc(100vh-2rem)] flex-col lg:flex-row">
         <AdminSidebar user={{ name: user.name, email: user.email }} />

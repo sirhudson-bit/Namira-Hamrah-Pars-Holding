@@ -3,6 +3,8 @@ import { prisma } from "@/server/db";
 import { toPersianDigits } from "@/lib/format";
 import { extractEmbedUrl } from "@/lib/embed";
 import { DEFAULT_FONT_FAMILY, sanitizeFamily } from "@/server/fonts";
+import { getLocale } from "@/server/locale";
+import { translateMany } from "@/server/translate";
 
 export type SiteSettings = {
   site_name: string;
@@ -46,6 +48,12 @@ export type SiteSettings = {
   font_family: string;
   /** Family used for headings; empty = same as body. */
   heading_font_family: string;
+  /* Support chat, managed from /admin/settings → «چت‌بات». */
+  chat_enabled: string;
+  chat_title: string;
+  chat_welcome: string;
+  /** Extra Q&A or facts the assistant may use, one item per line. */
+  chat_extra_knowledge: string;
   /* Reading experience, managed from /admin/settings → «نمایش و خوانایی». */
   /** Root font size of the public site, in CSS pixels. */
   font_size: string;
@@ -116,6 +124,11 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   hero_image_alt: "مقر هلدینگ نامیرا همراه پارس",
   font_family: "Vazirmatn",
   heading_font_family: "",
+  chat_enabled: "true",
+  chat_title: "دستیار نامیرا",
+  chat_welcome:
+    "سلام! من دستیار هوشمند هلدینگ نامیرا هستم. درباره گروه‌های کسب‌وکار، فروشگاه‌ها، خدمات یا راه‌های تماس بپرسید.",
+  chat_extra_knowledge: "",
   font_size: "16",
   line_height: "1.75",
   maintenance_mode: "false",
@@ -168,6 +181,10 @@ export const SETTINGS_TABS = {
   seo: { label: "سئو", keys: ["seo_title", "seo_description", "ga_id", "analytics_enabled"] },
   reading: { label: "نمایش و خوانایی", keys: ["font_size", "line_height"] },
   fonts: { label: "فونت", keys: ["font_family", "heading_font_family"] },
+  chat: {
+    label: "چت‌بات",
+    keys: ["chat_enabled", "chat_title", "chat_welcome", "chat_extra_knowledge"],
+  },
   branding: { label: "لوگو و برند", keys: ["video_embed"] },
   maintenance: { label: "حالت تعمیر", keys: ["maintenance_mode", "maintenance_message"] },
   account: { label: "حساب کاربری", keys: [] as string[] },
@@ -218,6 +235,55 @@ function clampOrb(value: string, min: number, max: number, fallback: number): st
   if (!Number.isFinite(n)) return String(fallback);
   return String(Math.min(max, Math.max(min, n)));
 }
+
+/** Settings whose text is shown to visitors and therefore translated. */
+const PUBLIC_TEXT_KEYS: (keyof SiteSettings)[] = [
+  "hero_eyebrow",
+  "hero_title",
+  "hero_lead",
+  "hero_cta_label",
+  "hero_video_label",
+  "hours",
+  "address",
+  "chat_title",
+  "chat_welcome",
+  "chat_extra_knowledge",
+  "maintenance_message",
+  "seo_title",
+  "seo_description",
+];
+
+/**
+ * The visitor-facing settings. Persian is the source language, so the raw rows
+ * are translated on read (and cached) for every other locale. The admin panel
+ * keeps using `getSettings()` and always sees the Persian source.
+ */
+export const getPublicSettings = cache(async (): Promise<SiteSettings> => {
+  const locale = await getLocale();
+  const base = await getSettings();
+  if (locale === "fa") return base;
+
+  const values = PUBLIC_TEXT_KEYS.map((key) => String(base[key] ?? ""));
+  const translated = await translateMany(values, locale);
+  const localized: SiteSettings = { ...base };
+  PUBLIC_TEXT_KEYS.forEach((key, index) => {
+    localized[key] = translated[index];
+  });
+
+  // `hero_stats` is `value|label` per line: only the label is prose.
+  const stats = base.hero_stats
+    .split("\n")
+    .map((line) => line.split("|").map((part) => part.trim()))
+    .filter((parts) => parts.length >= 2 && parts[1]);
+  if (stats.length > 0) {
+    const labels = await translateMany(stats.map((parts) => parts[1]), locale);
+    localized.hero_stats = stats
+      .map((parts, index) => `${parts[0]}|${labels[index]}`)
+      .join("\n");
+  }
+
+  return localized;
+});
 
 /**
  * Reads every setting row into one typed object, filling gaps with defaults.

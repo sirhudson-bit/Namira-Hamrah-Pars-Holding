@@ -1,10 +1,20 @@
-export type NavChild = { label: string; href: string; description?: string };
+export type NavChild = {
+  label: string;
+  href: string;
+  description?: string;
+  /** Optional preview photograph managed from /admin/menus. */
+  image?: string;
+  imageAlt?: string;
+};
 export type NavItem = {
   label: string;
   /** Shorter label for the desktop bar, where horizontal space is tight. */
   shortLabel?: string;
   href: string;
   children?: NavChild[];
+  /** Optional preview photograph managed from /admin/menus. */
+  image?: string;
+  imageAlt?: string;
 };
 
 export const MAIN_NAV: NavItem[] = [

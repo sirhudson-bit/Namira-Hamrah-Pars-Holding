@@ -99,6 +99,10 @@ model MenuItem {
   label        String
   href         String
   description  String     @default("")
+  /// Optional photograph for this entry: the full-screen index and the header
+  /// dropdown use it as the preview instead of the generic route image.
+  image        String     @default("")
+  imageAlt     String     @default("")
   sortOrder    Int        @default(0)
   visible      Boolean    @default(true)
   openInNewTab Boolean    @default(false)
@@ -304,6 +308,20 @@ model FontAsset {
   mime      String
   size      Int
   createdAt DateTime @default(now())
+}
+
+/// Machine translation cache. A public page in a non-Persian locale asks for
+/// the same strings on every request; storing the result keeps the live
+/// translator off the hot path and makes the site survive a provider outage.
+model Translation {
+  /// sha256(locale + "\n" + source) — stable and bounded, unlike the text.
+  key       String   @id
+  locale    String
+  source    String
+  target    String
+  createdAt DateTime @default(now())
+
+  @@index([locale])
 }
 
 /// Namira Labs innovation projects.

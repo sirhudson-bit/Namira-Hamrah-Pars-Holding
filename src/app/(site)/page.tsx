@@ -19,7 +19,9 @@ import {
   getInnovationProjects,
   getOrgUnits,
 } from "@/server/content";
-import { getSettings } from "@/server/settings";
+import { getPublicSettings as getSettings } from "@/server/settings";
+import { getLocale } from "@/server/locale";
+import { localizeTree } from "@/server/translate";
 import { formatJalaliLong } from "@/lib/format";
 import { imagePositionCss } from "@/lib/media";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion/reveal";
@@ -86,6 +88,73 @@ const VALUE_CHAIN = [
   },
 ];
 
+/**
+ * Editorial copy of the home page. It is written once in Persian and passed
+ * through `localizeTree` on the way out, so the chapters, the value chain and
+ * the calls to action translate together with the database content.
+ */
+const HOME_COPY = {
+  groups: {
+    kicker: "گروه‌های کسب‌وکار",
+    title: "پنج بازار، یک استاندارد",
+    lead: "هر گروه با تیم، زنجیره تأمین و کانال فروش مستقل خود اداره می‌شود. روی هر کارت توقف کنید تا جزئیات و مزیت‌های آن گروه باز شود.",
+    action: "نمای کامل گروه‌ها",
+    unit: "گروه",
+    dragHint: "برای دیدن همه، بکشید",
+  },
+  about: {
+    kicker: "درباره نامیرا",
+    titleA: "یک هلدینگ،",
+    titleB: "چند بازار، یک استاندارد",
+    lead: "تأمین مطمئن، انبارش دقیق، فروش چندکاناله و خدماتی که اعتماد مشتری را نگه می‌دارد — همه زیر یک ساختار واحد و با یک استاندارد عملیاتی.",
+    action: "بیشتر درباره نامیرا",
+    quote: "«تصمیم درست، تصمیمی است که بر داده واقعی و تجربه انسانی استوار باشد.»",
+    intro: "معرفی هلدینگ",
+  },
+  chain: {
+    kicker: "زنجیره ارزش",
+    title: "از تأمین‌کننده تا مشتری",
+    lead: "پنج حلقه‌ای که هر سفارش را از مبدأ تا پشتیبانی پس از فروش همراهی می‌کند.",
+  },
+  labs: {
+    kicker: "نامیرا لبز",
+    titleA: "نوآوری و هوش مصنوعی،",
+    titleB: "موتور رشد بعدی نامیرا",
+    lead: "نامیرا لبز بازوی فناورانه هلدینگ است؛ جایی که داده‌های فروش به تصمیم، و ایده‌های محصول به سرویس تبدیل می‌شوند.",
+    action: "ورود به بخش نوآوری",
+  },
+  channels: {
+    kicker: "کانال‌های فروش",
+    title: "همان کالا، در مسیری که شما انتخاب می‌کنید",
+    lead: "از خرید تک‌عددی آنلاین تا تأمین عمده سازمانی و تجربه حضوری؛ هر کانال خدمات اختصاصی خود را دارد.",
+    action: "همه کانال‌ها",
+  },
+  news: {
+    kicker: "رسانه",
+    title: "آخرین رویدادهای نامیرا",
+    lead: "رویدادها، همکاری‌ها و دستاوردهای هلدینگ.",
+    action: "همه اخبار",
+    empty: "خبری برای نمایش منتشر نشده است.",
+  },
+  cta: {
+    kicker: "۰۷ — همکاری",
+    titleA: "برای ساختن زنجیره بعدی،",
+    titleB: "با نامیرا همراه شوید.",
+    lead: "همکاری تجاری، تأمین کالا، فروش سازمانی یا پیوستن به تیم؛ هر مسیر همکاری از یک گفتگو شروع می‌شود.",
+    contact: "تماس با ما",
+    careers: "فرصت‌های شغلی",
+  },
+  misc: {
+    iran: "تهران · ایران",
+    groupsUnit: "گروه کسب‌وکار",
+    coverCaption: "هلدینگ نامیرا همراه پارس",
+    coverAlt: "مقر هلدینگ نامیرا همراه پارس",
+    coverSubtitle: "پنج گروه، یک ساختار",
+    coverLink: "مشاهده گروه‌های کسب‌وکار",
+    groupCta: "مشاهده گروه",
+  },
+};
+
 const fa = (n: number, min = 2) =>
   new Intl.NumberFormat("fa-IR", { minimumIntegerDigits: min }).format(n);
 
@@ -135,6 +204,14 @@ export default async function HomePage() {
     getOrgUnits(),
   ]);
 
+  const locale = await getLocale();
+  const [chapters, pillars, chain, copy] = await Promise.all([
+    localizeTree(CHAPTERS, locale),
+    localizeTree(PILLARS, locale),
+    localizeTree(VALUE_CHAIN, locale),
+    localizeTree(HOME_COPY, locale),
+  ]);
+
   // Hero copy and stats are editable from /admin/home.
   const heroStats = settings.hero_stats
     .split("\n")
@@ -152,12 +229,12 @@ export default async function HomePage() {
     });
 
   const coverImage = settings.hero_image || "/images/topics/hq.webp";
-  const coverAlt = settings.hero_image_alt || "مقر هلدینگ نامیرا همراه پارس";
+  const coverAlt = settings.hero_image_alt || copy.misc.coverAlt;
   const [featuredNews, ...restNews] = news;
 
   return (
     <KineticGrid globalColor="brand" className="overflow-visible">
-      <ChapterRail chapters={CHAPTERS} />
+      <ChapterRail chapters={chapters} />
 
       {/* ================================================================ Cover */}
       <section
@@ -205,7 +282,7 @@ export default async function HomePage() {
                   href="/about"
                   className="group inline-flex items-center gap-2 rounded-full px-3 py-2 text-[13px] font-medium text-ink-700 transition-colors hover:text-accent"
                 >
-                  معرفی هلدینگ
+                  {copy.about.intro}
                   <ArrowUpRight
                     className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
                     aria-hidden
@@ -224,9 +301,11 @@ export default async function HomePage() {
                   {settings.hours}
                 </span>
                 <span className="hidden h-3 w-px bg-line-200 sm:block" aria-hidden />
-                <span>تهران · ایران</span>
+                <span>{copy.misc.iran}</span>
                 <span className="hidden h-3 w-px bg-line-200 sm:block" aria-hidden />
-                <span>{groups.length.toLocaleString("fa-IR")} گروه کسب‌وکار</span>
+                <span>
+                  {groups.length.toLocaleString(locale === "fa" ? "fa-IR" : "en-US")} {copy.misc.groupsUnit}
+                </span>
               </div>
             </Reveal>
           </div>
@@ -235,10 +314,10 @@ export default async function HomePage() {
             <CoverGate
               image={coverImage}
               alt={coverAlt}
-              caption="هلدینگ نامیرا همراه پارس"
+              caption={copy.misc.coverCaption}
+              subtitle={copy.misc.coverSubtitle}
+              linkLabel={copy.misc.coverLink}
               href={settings.hero_cta_href || "/business-groups"}
-              showOrb={settings.hero_enabled !== "false"}
-              orbSize={Number(settings.hero_orb_size)}
             />
           </Reveal>
         </div>
@@ -296,17 +375,18 @@ export default async function HomePage() {
         <div className="container-wide">
           <ChapterHead
             index={1}
-            kicker="گروه‌های کسب‌وکار"
-            title="پنج بازار، یک استاندارد"
-            description="هر گروه با تیم، زنجیره تأمین و کانال فروش مستقل خود اداره می‌شود. روی هر کارت توقف کنید تا جزئیات و مزیت‌های آن گروه باز شود."
+            kicker={copy.groups.kicker}
+            title={copy.groups.title}
+            description={copy.groups.lead}
             action={
               <Link href="/business-groups" className="btn-secondary shrink-0">
-                نمای کامل گروه‌ها
+                {copy.groups.action}
                 <ArrowLeft className="h-4 w-4" aria-hidden />
               </Link>
             }
           />
           <GroupScroller
+            hint={`${groups.length.toLocaleString(locale === "fa" ? "fa-IR" : "en-US")} ${copy.groups.unit} · ${copy.groups.dragHint}`}
             groups={groups.map((group) => {
               const href = group.ctaUrl || `/business-groups/${group.slug}`;
               return {
@@ -317,7 +397,7 @@ export default async function HomePage() {
                 image: group.image,
                 imageAlt: group.imageAlt || group.name,
                 href,
-                ctaLabel: group.ctaLabel || "مشاهده گروه",
+                ctaLabel: group.ctaLabel || copy.misc.groupCta,
                 external: /^https?:\/\//.test(href),
                 highlights: group.highlights.split("\n").filter(Boolean),
                 color: group.color,
@@ -338,20 +418,19 @@ export default async function HomePage() {
             <p className="xp-index flex items-center gap-3">
               <span className="tabular-nums text-accent">02</span>
               <span className="h-px w-10 bg-line-200" aria-hidden />
-              درباره نامیرا
+              {copy.about.kicker}
             </p>
             <h2 className="mt-4 text-[clamp(1.9rem,4vw,3.2rem)] font-extrabold leading-[1.16] text-ink-900">
-              یک هلدینگ،
+              {copy.about.titleA}
               <br />
-              چند بازار، یک استاندارد
+              {copy.about.titleB}
             </h2>
             <p className="mt-5 max-w-md text-[14px] leading-8 text-ink-500">
-              تأمین مطمئن، انبارش دقیق، فروش چندکاناله و خدماتی که اعتماد مشتری را نگه می‌دارد —
-              همه زیر یک ساختار واحد و با یک استاندارد عملیاتی.
+              {copy.about.lead}
             </p>
             <Reveal className="mt-7">
               <Link href="/about" className="btn-secondary">
-                بیشتر درباره نامیرا
+                {copy.about.action}
                 <ArrowLeft className="h-4 w-4" aria-hidden />
               </Link>
             </Reveal>
@@ -372,7 +451,7 @@ export default async function HomePage() {
                 </div>
                 <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-4 p-6">
                   <p className="max-w-md text-[13px] leading-7 text-white/85">
-                    «تصمیم درست، تصمیمی است که بر داده واقعی و تجربه انسانی استوار باشد.»
+                    {copy.about.quote}
                   </p>
                   <span className="text-[10px] uppercase tracking-[0.2em] text-white/60">Namira Holding</span>
                 </div>
@@ -380,7 +459,7 @@ export default async function HomePage() {
             </Reveal>
 
             <Stagger className="mt-8 grid gap-px overflow-hidden rounded-[18px] border border-line-200 bg-line-200 sm:grid-cols-2">
-              {PILLARS.map((pillar) => (
+              {pillars.map((pillar) => (
                 <StaggerItem key={pillar.title} className="bg-surface p-6">
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-line-200 bg-surface-100 text-accent">
                     <pillar.Icon className="h-5 w-5" aria-hidden />
@@ -399,13 +478,13 @@ export default async function HomePage() {
         <div className="container-wide">
           <ChapterHead
             index={3}
-            kicker="زنجیره ارزش"
-            title="از تأمین‌کننده تا مشتری"
-            description="پنج حلقه‌ای که هر سفارش را از مبدأ تا پشتیبانی پس از فروش همراهی می‌کند."
+            kicker={copy.chain.kicker}
+            title={copy.chain.title}
+            description={copy.chain.lead}
           />
 
           <ol className="border-t border-line-200">
-            {VALUE_CHAIN.map((step, index) => (
+            {chain.map((step, index) => (
               <li key={step.title}>
                 <div className="group grid grid-cols-[2rem_1fr] items-center gap-4 border-b border-line-200 py-6 transition-colors duration-300 hover:bg-surface-100/60 sm:grid-cols-[3rem_1fr_7rem] sm:gap-6 sm:px-2 lg:grid-cols-[4rem_1fr_10rem]">
                   <span className="text-[11px] font-bold tabular-nums text-ink-400 transition-colors group-hover:text-accent">
@@ -453,16 +532,15 @@ export default async function HomePage() {
               <p className="xp-index flex items-center gap-3">
                 <span className="tabular-nums text-brand-300">04</span>
                 <span className="h-px w-10 bg-white/20" aria-hidden />
-                نامیرا لبز
+                {copy.labs.kicker}
               </p>
               <h2 className="mt-4 text-[clamp(1.9rem,4.2vw,3.3rem)] font-extrabold leading-[1.16] text-white">
-                نوآوری و هوش مصنوعی،
+                {copy.labs.titleA}
                 <br />
-                موتور رشد بعدی نامیرا
+                {copy.labs.titleB}
               </h2>
               <p className="mt-5 max-w-lg text-[14px] leading-8 text-white/70">
-                نامیرا لبز بازوی فناورانه هلدینگ است؛ جایی که داده‌های فروش به تصمیم، و ایده‌های
-                محصول به سرویس تبدیل می‌شوند.
+                {copy.labs.lead}
               </p>
 
               <div className="mt-7 flex flex-wrap gap-2">
@@ -478,7 +556,7 @@ export default async function HomePage() {
 
               <Reveal className="mt-8">
                 <Link href="/innovation" className="btn-primary">
-                  ورود به بخش نوآوری
+                  {copy.labs.action}
                   <ArrowLeft className="h-4 w-4" aria-hidden />
                 </Link>
               </Reveal>
@@ -514,12 +592,12 @@ export default async function HomePage() {
         <div className="container-wide">
           <ChapterHead
             index={5}
-            kicker="کانال‌های فروش"
-            title="همان کالا، در مسیری که شما انتخاب می‌کنید"
-            description="از خرید تک‌عددی آنلاین تا تأمین عمده سازمانی و تجربه حضوری؛ هر کانال خدمات اختصاصی خود را دارد."
+            kicker={copy.channels.kicker}
+            title={copy.channels.title}
+            description={copy.channels.lead}
             action={
               <Link href="/stores" className="btn-secondary shrink-0">
-                همه کانال‌ها
+                {copy.channels.action}
                 <ArrowLeft className="h-4 w-4" aria-hidden />
               </Link>
             }
@@ -572,12 +650,12 @@ export default async function HomePage() {
         <div className="container-wide">
           <ChapterHead
             index={6}
-            kicker="رسانه"
-            title="آخرین رویدادهای نامیرا"
-            description="رویدادها، همکاری‌ها و دستاوردهای هلدینگ."
+            kicker={copy.news.kicker}
+            title={copy.news.title}
+            description={copy.news.lead}
             action={
               <Link href="/media/news" className="btn-ghost shrink-0 px-0">
-                همه اخبار
+                {copy.news.action}
                 <ArrowLeft className="h-4 w-4" aria-hidden />
               </Link>
             }
@@ -585,7 +663,7 @@ export default async function HomePage() {
 
           {news.length === 0 ? (
             <div className="card p-10 text-center text-sm text-ink-500">
-              خبری برای نمایش منتشر نشده است.
+              {copy.news.empty}
             </div>
           ) : (
             <Stagger className="grid gap-4 md:grid-cols-3">
@@ -682,26 +760,25 @@ export default async function HomePage() {
         </div>
         <div className="on-dark relative py-20 lg:py-28">
           <div className="container-wide">
-            <p className="xp-index text-brand-300">۰۷ — همکاری</p>
+            <p className="xp-index text-brand-300">{copy.cta.kicker}</p>
             <h2 className="mt-4 max-w-3xl text-[clamp(2rem,5vw,4rem)] font-black leading-[1.12] text-white">
-              برای ساختن زنجیره بعدی،
+              {copy.cta.titleA}
               <br />
-              با نامیرا همراه شوید.
+              {copy.cta.titleB}
             </h2>
             <p className="mt-5 max-w-xl text-[14px] leading-8 text-white/65">
-              همکاری تجاری، تأمین کالا، فروش سازمانی یا پیوستن به تیم؛ هر مسیر همکاری از یک
-              گفتگو شروع می‌شود.
+              {copy.cta.lead}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/contact" className="btn-primary">
-                تماس با ما
+                {copy.cta.contact}
                 <ArrowLeft className="h-4 w-4" aria-hidden />
               </Link>
               <Link
                 href="/careers"
                 className="btn inline-flex border border-white/20 bg-white/5 text-white hover:bg-white/10"
               >
-                فرصت‌های شغلی
+                {copy.cta.careers}
               </Link>
             </div>
           </div>

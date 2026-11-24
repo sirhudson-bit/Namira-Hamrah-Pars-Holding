@@ -169,6 +169,40 @@ export function SettingsForm({
         </div>
       ) : null}
 
+      {tab === "chat" ? (
+        <div className="card p-5">
+          <h2 className="mb-1 text-[14px] font-bold text-ink-900">دستیار گفتگو</h2>
+          <p className="mb-4 text-[12px] leading-6 text-ink-500">
+            دکمه گفتگو در گوشه پایین-چپ همه صفحات سایت نمایش داده می‌شود. پاسخ‌ها از محتوای
+            همین سایت (گروه‌ها، فروشگاه‌ها، خدمات، صفحات و اخبار) ساخته می‌شوند؛ اگر کلید مدل
+            زبانی در سرور تنظیم شده باشد، همان مدل پاسخ می‌دهد.
+          </p>
+          <div className="space-y-4">
+            <Checkbox
+              label="دستیار فعال باشد"
+              name="chat_enabled"
+              defaultChecked={settings.chat_enabled !== "false"}
+              hint="با برداشتن تیک، دکمه گفتگو از همه صفحات حذف می‌شود."
+            />
+            <Field label="عنوان پنجره" name="chat_title" defaultValue={settings.chat_title} />
+            <Textarea
+              label="پیام خوش‌آمد"
+              name="chat_welcome"
+              rows={3}
+              defaultValue={settings.chat_welcome}
+              hint="اولین پیامی که بازدیدکننده پیش از پرسیدن سؤال می‌بیند."
+            />
+            <Textarea
+              label="دانش تکمیلی"
+              name="chat_extra_knowledge"
+              rows={5}
+              defaultValue={settings.chat_extra_knowledge}
+              hint="هر خط یک نکته: شرایط گارانتی، رویه مرجوعی، ساعت پاسخ‌گویی. این متن به دانش سایت اضافه می‌شود."
+            />
+          </div>
+        </div>
+      ) : null}
+
       {tab === "fonts" ? (
         <div className="card p-5">
           <h2 className="mb-1 text-[14px] font-bold text-ink-900">خانواده فونت</h2>

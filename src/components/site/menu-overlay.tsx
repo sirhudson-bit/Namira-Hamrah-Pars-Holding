@@ -7,10 +7,13 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, X } from "lucide-react";
 import type { NavItem } from "@/lib/site";
+import type { Locale } from "@/lib/i18n";
 import { toLatinDigits } from "@/lib/format";
 import { Logo } from "@/components/site/logo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { LanguageSwitcher } from "@/components/site/language-switcher";
 import { EASE } from "@/components/motion/reveal";
+import type { ChromeLabels } from "@/server/chrome";
 
 /**
  * Topic photography used as the hover preview of the full-screen index.
@@ -41,6 +44,8 @@ export function MenuOverlay({
   open,
   onClose,
   nav,
+  labels,
+  locale,
   siteName,
   phone,
   email,
@@ -49,12 +54,15 @@ export function MenuOverlay({
   open: boolean;
   onClose: () => void;
   nav: NavItem[];
+  labels: ChromeLabels;
+  locale: Locale;
   siteName: string;
   phone: string;
   email: string;
   hours: string;
 }) {
   const [activeHref, setActiveHref] = useState(nav[0]?.href ?? "/");
+  const [hoverImage, setHoverImage] = useState<{ src: string; caption: string } | null>(null);
   const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -69,7 +77,16 @@ export function MenuOverlay({
     () => nav.find((item) => item.href === activeHref) ?? nav[0],
     [activeHref, nav],
   );
-  const preview = PREVIEWS[active?.href ?? "/"] ?? PREVIEWS["/"];
+  // Menu images are managed in /admin/menus; the map below only covers routes
+  // that have no image yet, so an untouched install still shows a photograph.
+  const preview =
+    hoverImage ??
+    (active?.image
+      ? { src: active.image, caption: active.imageAlt || active.label }
+      : {
+          src: (PREVIEWS[active?.href ?? "/"] ?? PREVIEWS["/"]).src,
+          caption: active?.label ?? "",
+        });
 
   // Escape closes; the page behind never scrolls while the index is open.
   useEffect(() => {
@@ -95,7 +112,7 @@ export function MenuOverlay({
           key="site-index"
           role="dialog"
           aria-modal="true"
-          aria-label="فهرست سایت"
+          aria-label={labels.indexAria}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -123,13 +140,14 @@ export function MenuOverlay({
                 <Logo size={40} />
               </Link>
               <div className="flex items-center gap-2">
+                <LanguageSwitcher locale={locale} label={labels.language} />
                 <ThemeToggle className="hidden sm:inline-flex" />
                 <button
                   type="button"
                   onClick={onClose}
                   className="inline-flex items-center gap-2 rounded-full border border-line-200 bg-surface px-4 py-2.5 text-[12px] font-semibold text-ink-900 transition-colors hover:bg-surface-100"
                 >
-                  بستن
+                  {labels.close}
                   <X className="h-4 w-4" aria-hidden />
                 </button>
               </div>
@@ -140,9 +158,9 @@ export function MenuOverlay({
                 <div>
                   <p className="kicker mb-6 flex flex-wrap items-center gap-3">
                     <span className="h-px w-8 bg-brand-500/60" aria-hidden />
-                    فهرست کامل · {String(nav.length).padStart(2, "0")} بخش
+                    {labels.fullIndex} · {String(nav.length).padStart(2, "0")} {labels.sections}
                     <span className="text-[10px] font-normal normal-case tracking-normal text-ink-400">
-                      برای دیدن ادامه، اسکرول کنید
+                      {labels.scrollHint}
                     </span>
                   </p>
 
@@ -152,8 +170,16 @@ export function MenuOverlay({
                       return (
                         <li key={`${item.href}-${item.label}`} className="border-b border-line-200">
                           <div
-                            onMouseEnter={() => setActiveHref(item.href)}
+                            onMouseEnter={() => {
+                              setActiveHref(item.href);
+                              setHoverImage(
+                                item.image
+                                  ? { src: item.image, caption: item.imageAlt || item.label }
+                                  : null,
+                              );
+                            }}
                             onFocus={() => setActiveHref(item.href)}
+                            onMouseLeave={() => setHoverImage(null)}
                             className="group flex items-start gap-4 py-4 sm:gap-6 sm:py-5"
                           >
                             <span
@@ -188,6 +214,13 @@ export function MenuOverlay({
                                       key={child.href}
                                       href={child.href}
                                       onClick={onClose}
+                                      onMouseEnter={() =>
+                                        setHoverImage(
+                                          child.image
+                                            ? { src: child.image, caption: child.imageAlt || child.label }
+                                            : null,
+                                        )
+                                      }
                                       className="text-[11.5px] text-ink-700 transition-colors hover:text-accent"
                                     >
                                       {child.label}
@@ -226,16 +259,18 @@ export function MenuOverlay({
                         </motion.div>
                       </AnimatePresence>
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-dark-900/85 via-dark-900/25 to-transparent p-5 pt-16">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-200">
-                          {preview.caption}
-                        </p>
+                        {preview.caption && preview.caption !== active?.label ? (
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-200">
+                            {preview.caption}
+                          </p>
+                        ) : null}
                         <p className="mt-1 text-lg font-bold text-white">{active?.label}</p>
                       </div>
                     </div>
 
                     <dl className="mt-6 space-y-3 text-[12px]">
                       <div className="flex items-baseline justify-between gap-4 border-b border-line-200 pb-2">
-                        <dt className="text-ink-500">تلفن</dt>
+                        <dt className="text-ink-500">{labels.phone}</dt>
                         <dd>
                           <a href={`tel:${toLatinDigits(phone)}`} dir="ltr" className="font-medium text-ink-900 hover:text-accent">
                             {phone}
@@ -243,7 +278,7 @@ export function MenuOverlay({
                         </dd>
                       </div>
                       <div className="flex items-baseline justify-between gap-4 border-b border-line-200 pb-2">
-                        <dt className="text-ink-500">ایمیل</dt>
+                        <dt className="text-ink-500">{labels.email}</dt>
                         <dd>
                           <a href={`mailto:${email}`} dir="ltr" className="font-medium text-ink-900 hover:text-accent">
                             {email}
@@ -251,7 +286,7 @@ export function MenuOverlay({
                         </dd>
                       </div>
                       <div className="flex items-baseline justify-between gap-4">
-                        <dt className="text-ink-500">ساعات کاری</dt>
+                        <dt className="text-ink-500">{labels.hours}</dt>
                         <dd className="text-ink-700">{hours}</dd>
                       </div>
                     </dl>
@@ -261,7 +296,7 @@ export function MenuOverlay({
             </div>
 
             <div className="container flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-line-200 py-4 text-[11px] text-ink-500">
-              <span>برای بستن، کلید Esc را بزنید.</span>
+              <span>{labels.escHint}</span>
               <span className="inline-flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-500" aria-hidden />
                 {siteName}

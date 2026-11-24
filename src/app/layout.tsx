@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
-import { getSettings, DEFAULT_SETTINGS } from "@/server/settings";
+import { getPublicSettings, DEFAULT_SETTINGS } from "@/server/settings";
 import { familyStack, fontFaceCss, getFontAssets } from "@/server/fonts";
+import { getLocale } from "@/server/locale";
+import { localeDir, localeInfo } from "@/lib/i18n";
 import { SITE_URL } from "@/lib/site";
 import {
   ThemeProvider,
@@ -11,7 +13,8 @@ import "@mdxeditor/editor/style.css";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSettings();
+  const [settings, locale] = await Promise.all([getPublicSettings(), getLocale()]);
+  const ogLocale = locale === "fa" ? "fa_IR" : locale === "ar" ? "ar_SA" : "en_US";
 
   return {
     metadataBase: new URL(SITE_URL),
@@ -23,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
     applicationName: settings.site_name,
     openGraph: {
       type: "website",
-      locale: "fa_IR",
+      locale: ogLocale,
       siteName: settings.site_name,
       title: settings.seo_title || DEFAULT_SETTINGS.seo_title,
       description: settings.seo_description || DEFAULT_SETTINGS.seo_description,
@@ -44,7 +47,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [settings, fonts] = await Promise.all([getSettings(), getFontAssets()]);
+  const [settings, fonts, locale] = await Promise.all([
+    getPublicSettings(),
+    getFontAssets(),
+    getLocale(),
+  ]);
 
   /**
    * Reading settings, resolved once per request and handed to CSS as variables
@@ -68,8 +75,8 @@ export default async function RootLayout({
 
   return (
     <html
-      lang="fa"
-      dir="rtl"
+      lang={localeInfo(locale).htmlLang}
+      dir={localeDir(locale)}
       data-theme="dark"
       suppressHydrationWarning
       style={typography}
