@@ -46,6 +46,17 @@ const SOURCE = {
   footerBlurb:
     "مجموعه‌ای چند‌گروهی با تمرکز بر خرده‌فروشی دیجیتال، توزیع و نوآوری فناورانه.",
   cookieSettings: "تنظیمات کوکی",
+  consentLabel: "رضایت استفاده از کوکی",
+  consentText:
+    "این سایت برای بهبود تجربه شما از کوکی استفاده می‌کند. کوکی‌های ضروری همیشه فعال‌اند و کوکی‌های تحلیلی فقط با رضایت شما اجرا می‌شوند.",
+  consentMore: "بیشتر بدانید",
+  consentAcceptAll: "پذیرش همه",
+  consentAcceptSelected: "پذیرش انتخاب‌شده",
+  consentRejectAll: "رد همه",
+  consentNecessary: "کوکی‌های ضروری",
+  consentNecessaryDesc: "نشست، امنیت فرم‌ها و ذخیره انتخاب شما. همیشه فعال.",
+  consentAnalytics: "کوکی‌های تحلیلی (Google Analytics)",
+  consentAnalyticsDesc: "تحلیل ترافیک و صفحات پربازدید، بدون شناسایی شخصی شما.",
   language: "زبان",
   skipToContent: "پرش به محتوای اصلی",
 } as const;

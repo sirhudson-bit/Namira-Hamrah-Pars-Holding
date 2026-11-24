@@ -272,7 +272,7 @@ export default async function HomePage() {
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link href={settings.hero_cta_href || "/business-groups"} className="btn-primary">
                   {settings.hero_cta_label || "گروه‌های کسب‌وکار"}
-                  <ArrowLeft className="h-4 w-4" aria-hidden />
+                  <ArrowLeft className="h-4 w-4 ltr:rotate-180" aria-hidden />
                 </Link>
                 <VideoModalTrigger
                   embedUrl={settings.video_embed}
@@ -346,7 +346,10 @@ export default async function HomePage() {
           </div>
         ) : null}
 
-        <div className="container-wide relative z-10 flex items-center justify-between gap-4 py-5 text-[10.5px] uppercase tracking-[0.2em] text-ink-400">
+        <div
+          className="container-wide relative z-10 flex items-center justify-between gap-4 py-5 text-[10.5px] uppercase tracking-[0.2em] text-ink-400"
+          style={{ paddingBottom: "calc(1.25rem + var(--consent-h, 0px))" }}
+        >
           <span className="inline-flex items-center gap-2">
             <span className="h-8 w-px animate-soft-pulse bg-accent/60" aria-hidden />
             Scroll to explore
@@ -381,7 +384,7 @@ export default async function HomePage() {
             action={
               <Link href="/business-groups" className="btn-secondary shrink-0">
                 {copy.groups.action}
-                <ArrowLeft className="h-4 w-4" aria-hidden />
+                <ArrowLeft className="h-4 w-4 ltr:rotate-180" aria-hidden />
               </Link>
             }
           />
@@ -431,7 +434,7 @@ export default async function HomePage() {
             <Reveal className="mt-7">
               <Link href="/about" className="btn-secondary">
                 {copy.about.action}
-                <ArrowLeft className="h-4 w-4" aria-hidden />
+                <ArrowLeft className="h-4 w-4 ltr:rotate-180" aria-hidden />
               </Link>
             </Reveal>
           </div>
@@ -557,7 +560,7 @@ export default async function HomePage() {
               <Reveal className="mt-8">
                 <Link href="/innovation" className="btn-primary">
                   {copy.labs.action}
-                  <ArrowLeft className="h-4 w-4" aria-hidden />
+                  <ArrowLeft className="h-4 w-4 ltr:rotate-180" aria-hidden />
                 </Link>
               </Reveal>
             </div>
@@ -598,7 +601,7 @@ export default async function HomePage() {
             action={
               <Link href="/stores" className="btn-secondary shrink-0">
                 {copy.channels.action}
-                <ArrowLeft className="h-4 w-4" aria-hidden />
+                <ArrowLeft className="h-4 w-4 ltr:rotate-180" aria-hidden />
               </Link>
             }
           />
@@ -656,7 +659,7 @@ export default async function HomePage() {
             action={
               <Link href="/media/news" className="btn-ghost shrink-0 px-0">
                 {copy.news.action}
-                <ArrowLeft className="h-4 w-4" aria-hidden />
+                <ArrowLeft className="h-4 w-4 ltr:rotate-180" aria-hidden />
               </Link>
             }
           />
@@ -772,7 +775,7 @@ export default async function HomePage() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/contact" className="btn-primary">
                 {copy.cta.contact}
-                <ArrowLeft className="h-4 w-4" aria-hidden />
+                <ArrowLeft className="h-4 w-4 ltr:rotate-180" aria-hidden />
               </Link>
               <Link
                 href="/careers"

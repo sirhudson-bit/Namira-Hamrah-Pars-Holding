@@ -15,7 +15,22 @@ import {
  * actively opts in — declining is as easy as accepting, and the choice can be
  * changed later from the footer ("تنظیمات کوکی").
  */
-export function CookieConsent() {
+const FA_LABELS = {
+  consentLabel: "رضایت استفاده از کوکی",
+  consentText:
+    "این سایت برای بهبود تجربه شما از کوکی استفاده می‌کند. کوکی‌های ضروری همیشه فعال‌اند و کوکی‌های تحلیلی فقط با رضایت شما اجرا می‌شوند.",
+  consentMore: "بیشتر بدانید",
+  consentAcceptAll: "پذیرش همه",
+  consentAcceptSelected: "پذیرش انتخاب‌شده",
+  consentRejectAll: "رد همه",
+  cookieSettings: "تنظیمات کوکی",
+  consentNecessary: "کوکی‌های ضروری",
+  consentNecessaryDesc: "نشست، امنیت فرم‌ها و ذخیره انتخاب شما. همیشه فعال.",
+  consentAnalytics: "کوکی‌های تحلیلی (Google Analytics)",
+  consentAnalyticsDesc: "تحلیل ترافیک و صفحات پربازدید، بدون شناسایی شخصی شما.",
+};
+
+export function CookieConsent({ labels = FA_LABELS }: { labels?: typeof FA_LABELS } = {}) {
   const [state, setState] = useState<ConsentState | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [analytics, setAnalytics] = useState(false);
@@ -85,7 +100,7 @@ export function CookieConsent() {
       ref={bannerRef}
       role="dialog"
       aria-modal="false"
-      aria-label="رضایت استفاده از کوکی"
+      aria-label={labels.consentLabel}
       className="fixed inset-x-0 bottom-0 z-[80] border-t border-line-200 bg-surface shadow-lift"
     >
       <div className="container py-4">
@@ -95,28 +110,27 @@ export function CookieConsent() {
               <Cookie className="h-[18px] w-[18px]" aria-hidden />
             </span>
             <p className="max-w-3xl text-xs leading-6 text-ink-500">
-              این سایت برای بهبود تجربه شما از کوکی استفاده می‌کند. کوکی‌های ضروری همیشه فعال‌اند؛
-              کوکی‌های تحلیلی فقط با رضایت شما اجرا می‌شوند.{" "}
+              {labels.consentText}{" "}
               <Link
                 href="/cookie-policy"
                 className="font-medium text-accent underline underline-offset-4"
               >
-                بیشتر بدانید
+                {labels.consentMore}
               </Link>
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
             <button type="button" onClick={() => decide(true)} className="btn-primary">
-              پذیرش همه
+              {labels.consentAcceptAll}
             </button>
             {expanded ? (
               <button type="button" onClick={() => decide(analytics)} className="btn-secondary">
-                پذیرش انتخاب‌شده
+                {labels.consentAcceptSelected}
               </button>
             ) : null}
             <button type="button" onClick={() => decide(false)} className="btn-ghost">
-              رد همه
+              {labels.consentRejectAll}
             </button>
             {!expanded ? (
               <button
@@ -124,7 +138,7 @@ export function CookieConsent() {
                 onClick={() => setExpanded(true)}
                 className="text-xs font-medium text-ink-500 underline underline-offset-4 hover:text-accent"
               >
-                تنظیمات کوکی
+                {labels.cookieSettings}
               </button>
             ) : null}
           </div>
@@ -135,9 +149,9 @@ export function CookieConsent() {
             <label className="flex items-start gap-2.5 rounded-xl border border-line-200 bg-surface-100 p-3">
               <input type="checkbox" checked disabled className="mt-0.5 h-4 w-4 accent-brand-700" />
               <span>
-                <span className="block text-xs font-semibold text-ink-900">کوکی‌های ضروری</span>
+                <span className="block text-xs font-semibold text-ink-900">{labels.consentNecessary}</span>
                 <span className="block text-[11px] text-ink-500">
-                  نشست، امنیت فرم‌ها و ذخیره انتخاب شما. همیشه فعال.
+                  {labels.consentNecessaryDesc}
                 </span>
               </span>
             </label>
@@ -150,10 +164,10 @@ export function CookieConsent() {
               />
               <span>
                 <span className="block text-xs font-semibold text-ink-900">
-                  کوکی‌های تحلیلی (Google Analytics)
+                  {labels.consentAnalytics}
                 </span>
                 <span className="block text-[11px] text-ink-500">
-                  تحلیل ترافیک و صفحات پربازدید. بدون شناسایی شخصی شما.
+                  {labels.consentAnalyticsDesc}
                 </span>
               </span>
             </label>

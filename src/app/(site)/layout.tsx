@@ -95,7 +95,7 @@ export default async function SiteLayout({
         welcome={settings.chat_welcome}
         labels={chrome.labels}
       />
-      <CookieConsent />
+      <CookieConsent labels={chrome.labels} />
       <ConsentGatedAnalytics gaId={gaId} />
     </div>
   );
