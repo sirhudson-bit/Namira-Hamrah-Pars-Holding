@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import http2 from "node:http2";
 import { prisma } from "@/server/db";
 import { hasPersian, type Locale } from "@/lib/i18n";
 
@@ -38,16 +39,89 @@ function readGtx(json: unknown): string {
     .join("");
 }
 
+const USER_AGENT = "Mozilla/5.0 (compatible; NamiraSite/1.0)";
+const BLOCK_COOLDOWN = 5 * 60 * 1000;
+let blockedUntil = 0;
+
+type H2Response = { status: number; body: string };
+
+/** One GET over HTTP/2 with a hard deadline; `null` means "try the fallback". */
+function http2Get(url: string): Promise<H2Response | null> {
+  return new Promise((resolve) => {
+    const target = new URL(url);
+    let settled = false;
+    const timerRef: { current?: ReturnType<typeof setTimeout> } = {};
+
+    const client = http2.connect(target.origin);
+    const finish = (value: H2Response | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timerRef.current);
+      resolve(value);
+      try {
+        client.close();
+      } catch {
+        // Already closed.
+      }
+    };
+
+    timerRef.current = setTimeout(() => finish(null), 6000);
+    client.on("error", () => finish(null));
+
+    let status = 0;
+    let body = "";
+    const request = client.request({
+      ":path": `${target.pathname}${target.search}`,
+      "user-agent": USER_AGENT,
+      accept: "*/*",
+      "accept-language": "fa,en;q=0.8",
+    });
+    request.setEncoding("utf8");
+    request.on("response", (headers) => {
+      status = Number(headers[":status"] ?? 0);
+    });
+    request.on("data", (chunk: string) => {
+      if (body.length < 400_000) body += chunk;
+    });
+    request.on("end", () => finish(status > 0 ? { status, body } : null));
+    request.on("error", () => finish(null));
+    request.end();
+  });
+}
+
 async function requestOne(text: string, locale: Locale): Promise<string | null> {
+  if (Date.now() < blockedUntil) return null;
+
   const url = `${ENDPOINT}?client=gtx&sl=fa&tl=${locale}&dt=t&q=${encodeURIComponent(text)}`;
+
+  // HTTP/2 first. Google answers 429 to HTTP/1.1 from datacenter IPs but serves
+  // the same request over h2, and Node's fetch never negotiates h2 — so the
+  // transport, not the provider, decides whether the site translates at all.
+  const response = await http2Get(url);
+  if (response) {
+    if (response.status === 429) {
+      blockedUntil = Date.now() + BLOCK_COOLDOWN;
+      return null;
+    }
+    if (response.status >= 200 && response.status < 300) {
+      try {
+        const translated = readGtx(JSON.parse(response.body));
+        return translated.trim() ? translated : null;
+      } catch {
+        return null;
+      }
+    }
+  }
+
+  // Fallback for a custom TRANSLATE_ENDPOINT that only speaks HTTP/1.1.
   try {
-    const response = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; NamiraSite/1.0)" },
-      signal: AbortSignal.timeout(6000),
+    const fallback = await fetch(url, {
+      headers: { "User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(5000),
       cache: "no-store",
     });
-    if (!response.ok) return null;
-    const translated = readGtx(await response.json());
+    if (!fallback.ok) return null;
+    const translated = readGtx(await fallback.json());
     return translated.trim() ? translated : null;
   } catch {
     return null;
