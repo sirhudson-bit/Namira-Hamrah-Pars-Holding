@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
-import { getSettings, SETTINGS_TABS, SETTINGS_TAB_ORDER, type SettingsTabKey } from "@/server/settings";
+import Link from "next/link";
+import {
+  getSettings,
+  SETTINGS_TABS,
+  SETTINGS_TAB_ORDER,
+  SETTINGS_TAB_ALIASES,
+  type SettingsTabKey,
+} from "@/server/settings";
 import { requireAdmin } from "@/server/auth";
 import { SettingsForm } from "@/components/admin/settings-form";
 import { FontManager } from "@/components/admin/font-manager";
@@ -13,21 +20,18 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "تنظیمات" };
 
 const DESCRIPTIONS: Record<SettingsTabKey, string> = {
-  general: "نام سایت و اطلاعات ثبتی هلدینگ.",
+  general: "نام سایت، اطلاعات ثبتی و حالت نگهداری.",
   contact: "تلفن، ایمیل، نشانی، نقشه و شبکه‌های اجتماعی.",
+  branding: "لوگو در دو حالت، فاوآیکون، تصویر هیرو و ویدئوی معرفی.",
+  typography: "فونت متن و تیترها، اندازه پایه و فاصله خطوط.",
   seo: "عنوان و توضیح پیش‌فرض موتور جستجو و آنالیتیکس.",
-  reading: "اندازه متن و فاصله خطوط در تمام سایت.",
-  fonts: "بارگذاری فونت و انتخاب خانواده برای متن و تیترها.",
   chat: "دستیار گفتگوی گوشه صفحه: روشن/خاموش، عنوان، خوش‌آمد و دانش تکمیلی.",
-  branding: "لوگو، فاوآیکون، تصویر هیرو و ویدئوی معرفی.",
-  maintenance: "پنهان کردن سایت از بازدیدکنندگان هنگام به‌روزرسانی.",
-  account: "گذرواژه حساب کاربری جاری و نشست‌های فعال.",
 };
 
 export default async function AdminSettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; view?: string }>;
 }) {
   const [params, settings, user, fonts, families] = await Promise.all([
     searchParams,
@@ -37,9 +41,14 @@ export default async function AdminSettingsPage({
     getFontFamilies(),
   ]);
 
-  const requested = params.tab as SettingsTabKey | undefined;
+  // A merged tab (?tab=fonts, ?tab=reading, ?tab=maintenance) redirects to the
+  // screen that absorbed it, so old links keep their place.
+  const requested = params.tab;
+  const resolved = (requested && SETTINGS_TAB_ALIASES[requested]) || requested;
   const tab: SettingsTabKey =
-    requested && SETTINGS_TAB_ORDER.includes(requested) ? requested : "general";
+    resolved && SETTINGS_TAB_ORDER.includes(resolved as SettingsTabKey)
+      ? (resolved as SettingsTabKey)
+      : "general";
 
   return (
     <div>
@@ -47,6 +56,11 @@ export default async function AdminSettingsPage({
         title="تنظیمات"
         description={DESCRIPTIONS[tab]}
         breadcrumb={[{ label: "تنظیمات", href: "/admin/settings" }, { label: SETTINGS_TABS[tab].label }]}
+        action={
+          <Link href={`/admin/settings?tab=${tab}&view=profile`} className="btn-secondary">
+            پروفایل و گذرواژه
+          </Link>
+        }
       />
 
       <ScreenTabs
@@ -59,45 +73,49 @@ export default async function AdminSettingsPage({
       />
 
       <div className="mx-auto max-w-3xl">
-        {tab === "fonts" ? (
-          <div className="space-y-5">
-            <SettingsForm settings={settings} tab="fonts" fontOptions={families} />
-            <FontManager assets={fonts} families={families} />
-          </div>
-        ) : null}
-
         {tab === "branding" ? (
           <div className="space-y-5">
             <section className="card p-5">
-              <h2 className="mb-1 text-[14px] font-bold text-ink-900">لوگو و فاوآیکون</h2>
+              <h2 className="mb-1 text-[14px] font-bold text-ink-900">لوگو در دو حالت</h2>
               <p className="mb-4 text-[12px] leading-6 text-ink-500">
                 تصاویر PNG، SVG، WEBP یا JPG؛ حداکثر ۲ مگابایت. تصاویر رستری به‌طور خودکار به
-                WebP تبدیل می‌شوند؛ SVG و ICO بدون تغییر می‌مانند. اگر لوگویی بارگذاری نشود، نشان
-                پیش‌فرض سایت نمایش داده می‌شود.
+                WebP تبدیل می‌شوند. سایت دو حالت رنگ دارد و لوگو با حالت فعال جابه‌جا می‌شود:
+                فایل «پس‌زمینه روشن» در حالت روشن، و فایل «پس‌زمینه تیره» در حالت تیره و در
+                نوارهای تیره‌ی همیشگی. اگر فقط یکی را بارگذاری کنید، همان در هر دو حالت
+                استفاده می‌شود.
               </p>
-              <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <BrandingUploader
                   kind="logo"
-                  label="لوگوی اصلی"
-                  hint="در سربرگ و پای‌صفحه روی پس‌زمینه روشن استفاده می‌شود."
+                  label="لوگوی پس‌زمینه روشن"
+                  hint="هنر تیره، برای پس‌زمینه‌ی روشن."
                   current={settings.logo_path}
                 />
                 <BrandingUploader
                   kind="logo_light"
-                  label="لوگوی روشن (برای پس‌زمینه تیره)"
-                  hint="در بخش‌های تیره مانند نامیرا لبز به کار می‌رود. اختیاری است."
+                  label="لوگوی پس‌زمینه تیره"
+                  hint="هنر روشن، برای پس‌زمینه‌ی تیره."
                   current={settings.logo_light_path}
                   tone="dark"
                 />
-                <BrandingUploader
-                  kind="favicon"
-                  label="فاوآیکون"
-                  hint="آیکون نوار مرورگر و نشانک‌ها. مربعی و کوچک (مثلاً ۳۲×۳۲)."
-                  current={settings.favicon_path}
-                  square
-                />
               </div>
-              <LogoSizeForm value={settings.logo_height} />
+              <LogoSizeForm value={settings.logo_height} bare />
+            </section>
+
+            <section className="card p-5">
+              <h2 className="mb-1 text-[14px] font-bold text-ink-900">فاوآیکون</h2>
+              <p className="mb-4 text-[12px] leading-6 text-ink-500">
+                آیکون نوار مرورگر و نشانک‌ها. مربعی و کوچک (مثلاً ۳۲×۳۲) بگذارید؛ اگر
+                بارگذاری نشود، آیکون پیش‌فرض سایت استفاده می‌شود.
+              </p>
+              <BrandingUploader
+                kind="favicon"
+                label="فاوآیکون"
+                hint="PNG، SVG، WEBP یا ICO؛ حداکثر ۲ مگابایت."
+                current={settings.favicon_path}
+                square
+                compact
+              />
             </section>
 
             <section className="card p-5">
@@ -118,11 +136,20 @@ export default async function AdminSettingsPage({
 
             <SettingsForm settings={settings} tab="branding" />
           </div>
-        ) : tab === "account" ? (
+        ) : tab === "typography" ? (
           <div className="space-y-5">
+            <SettingsForm settings={settings} tab="typography" fontOptions={families} />
+            <FontManager assets={fonts} families={families} />
+          </div>
+        ) : (
+          <SettingsForm settings={settings} tab={tab} />
+        )}
+
+        {params.view === "profile" ? (
+          <div className="mt-5 space-y-5">
             <section className="card p-5">
               <h2 className="mb-1 text-[14px] font-bold text-ink-900">حساب کاربری</h2>
-              <dl className="grid gap-3 text-[12.5px] sm:grid-cols-2">
+              <dl className="mt-3 grid gap-3 text-[12.5px] sm:grid-cols-3">
                 <div>
                   <dt className="text-ink-500">نام</dt>
                   <dd className="mt-0.5 font-medium text-ink-900">{user.name}</dd>
@@ -143,9 +170,7 @@ export default async function AdminSettingsPage({
             </section>
             <PasswordForm email={user.email} />
           </div>
-        ) : (
-          tab === "fonts" ? null : <SettingsForm settings={settings} tab={tab} />
-        )}
+        ) : null}
       </div>
     </div>
   );

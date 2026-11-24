@@ -34,7 +34,10 @@ export async function Footer({ settings, menus }: { settings: SiteSettings; menu
       <div className="container relative py-16 sm:py-20">
         <div className="grid gap-12 lg:grid-cols-[1.6fr_repeat(4,1fr)]">
           <div>
-            <Logo src={settings.logo_path || undefined} />
+            <Logo
+              src={settings.logo_path || undefined}
+              srcLight={settings.logo_light_path || undefined}
+            />
             <p className="mt-6 max-w-sm text-sm leading-8 text-ink-500">
               {settings.legal_name} — {labels.footerBlurb}
             </p>

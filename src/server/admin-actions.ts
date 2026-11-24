@@ -829,6 +829,7 @@ const EDITABLE_SETTING_KEYS = [
   "maintenance_message",
   "font_family",
   "heading_font_family",
+  "chat_enabled",
   "chat_title",
   "chat_welcome",
   "chat_extra_knowledge",

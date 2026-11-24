@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Award, BadgeCheck, Eye, Heart, Target } from "lucide-react";
 import { getMilestones, getTeam } from "@/server/content";
+import { getPublicSettings } from "@/server/settings";
 import { renderMarkdown } from "@/lib/markdown";
 import { PageBuilder } from "@/components/site/page-builder";
 import { PageHero, SectionHeading } from "@/components/site/ui";
@@ -66,7 +67,11 @@ const FACTS = [
 ];
 
 export default async function AboutPage() {
-  const [milestones, team] = await Promise.all([getMilestones(), getTeam()]);
+  const [milestones, team, settings] = await Promise.all([
+    getMilestones(),
+    getTeam(),
+    getPublicSettings(),
+  ]);
 
   return (
     <>
@@ -116,7 +121,10 @@ export default async function AboutPage() {
           <aside className="space-y-4">
             <Reveal delay={0.08}>
               <div className="card p-6">
-                <Logo />
+                <Logo
+                  src={settings.logo_path || undefined}
+                  srcLight={settings.logo_light_path || undefined}
+                />
                 <dl className="mt-5 space-y-3 text-sm">
                   {FACTS.map((row) => (
                     <div

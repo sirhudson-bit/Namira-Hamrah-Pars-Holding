@@ -146,7 +146,7 @@ disorganised page:
 - **Shadows are soft and diffused.** Wide blur (40–120px), a generous negative spread and a low
   alpha, layered so the edge never reads as a hard line. Hard 1px-offset shadows fight the editorial
   surfaces.
-- **The header logo height is a setting**, not a constant: `/admin/settings` → «لوگو و فاوآیکون» has
+- **The header logo height is a setting**, not a constant: `/admin/settings?tab=branding` has
   a focused form (24–96px) that writes only `logo_height`. It is deliberately **not** part of the
   main settings form, which rewrites every key it knows — a partial post there would blank the rest.
   The built-in wordmark scales with it too (mark and type are derived from the same value).
@@ -179,10 +179,11 @@ blue. `/admin` always follows the site theme.
   revealed on hover) and a separate editor opened by `?edit=<id>` / `?new=1`: content fields in the
   wide column, a side meta box holding publish state, order and image, with Save/Delete in the same
   place on every screen. No `<details>` accordions.
-- **Settings are tabs.** عمومی، تماس و نقشه، سئو، نمایش و خوانایی، فونت، لوگو و برند، حالت تعمیر،
-  حساب کاربری. Each tab is its own form and **only posts its own keys** — `saveSettings` filters
-  through `SETTINGS_TABS` so saving one tab cannot blank the others.
-- **Fonts are content.** `/admin/settings?tab=fonts` uploads woff2/woff/ttf/otf (magic-byte checked,
+- **Settings are tabs, grouped by question.** عمومی (identity + maintenance), تماس و نشانی, برند و
+  ظاهر, تایپوگرافی, سئو و آمار, چت‌بات. Each tab is its own form and **only posts its own keys** —
+  `saveSettings` filters through `SETTINGS_TABS` so saving one tab cannot blank the others. See
+  *Settings screens* below for what each owns and why some tabs were merged.
+- **Fonts are content.** `/admin/settings?tab=typography` uploads woff2/woff/ttf/otf (magic-byte checked,
   4 MB cap), groups files into a family by name, previews each family, and lets you pick separate
   body and heading families. The root layout emits the `@font-face` rules and the CSS variables on
   first paint; Vazirmatn stays the bundled fallback.
@@ -316,21 +317,32 @@ Audited against the Vercel React best-practices guide. What is enforced here:
 
 ## Branding (logo & favicon)
 
-In `/admin/settings`, the **«لوگو و فاوآیکون»** section uploads:
+The site has a light and a dark palette, so the mark needs two artworks. In
+`/admin/settings?tab=branding`:
 
 | Asset | Where it appears |
 |---|---|
-| Main logo | Site header, footer, admin login (the built-in SVG mark is the fallback) |
-| Light logo | Reserved for dark surfaces (optional) |
+| لوگوی پس‌زمینه روشن (`logo_path`) | Header, footer, login and maintenance screens **on light backgrounds** |
+| لوگوی پس‌زمینه تیره (`logo_light_path`) | The same places **in dark mode**, and inside the always-dark bands (`.band`, `.on-dark`) |
 | Favicon | Browser tab / bookmarks via the root metadata; falls back to `/icon.svg` |
+
+Both files are rendered and CSS picks the visible one (`.logo-swap` in `globals.css`, keyed on
+`[data-theme="dark"]` plus the dark-band selectors). The swap is therefore instant on the theme
+toggle — no JavaScript, no flash of the wrong logo. Upload only one file and it is used in both
+themes; upload neither and the built-in SVG mark is drawn.
 
 Uploads are limited to PNG/SVG/WEBP/JPG/ICO and 2 MB (page backdrops 8 MB), are written to
 `public/uploads/branding/`, replace the previous file (so nothing accumulates), and are read
 back through `getSettings()`.
 
+**If the two files were uploaded the wrong way round** the mark disappears in one theme. The labels
+now name the background, and `scripts/fix-logo-variants.ts` repairs existing installs: it measures
+the average luminance of each file's opaque pixels and swaps the settings when the light artwork is
+sitting on the light background. Run it dry first, then with `--apply`.
+
 ## Typography
 
-The bundled face is Vazirmatn (`public/fonts`, self-hosted). `/admin/settings?tab=fonts` adds any
+The bundled face is Vazirmatn (`public/fonts`, self-hosted). `/admin/settings?tab=typography` adds any
 number of web fonts and lets the administrator choose **separate body and heading families**:
 
 - Files: `woff2`, `woff`, `ttf`, `otf` — up to 4 MB, validated by extension **and** magic bytes
@@ -458,6 +470,26 @@ tests/               Vitest suites
 scripts/
   e2e.mjs            end-to-end verification (npm run verify)
 ```
+
+## Settings screens
+
+Six tabs, grouped by the question an administrator is answering rather than by database column.
+Anything that only makes sense together lives on one screen — merging a tab is better than
+explaining why two screens must agree.
+
+| Tab | Owns |
+| --- | --- |
+| عمومی | site and legal name, registration number, national ID, maintenance switch and message |
+| تماس و نشانی | phone, mobile, email, hours, address, map embed, social links |
+| برند و ظاهر | both logos (light/dark background), favicon, header logo height, page-hero backdrop, intro video |
+| تایپوگرافی | body and heading families, base font size, line height, font uploads |
+| سئو و آمار | default title/description, Google Analytics id and switch |
+| چت‌بات | assistant on/off, window title, welcome message, extra knowledge |
+
+Profile and password are not a tab: they live behind **پروفایل و گذرواژه** in the screen header,
+because an account is not a site setting. Removed tabs (`?tab=fonts`, `?tab=reading`,
+`?tab=maintenance`) map to the screen that absorbed them (`SETTINGS_TAB_ALIASES`), so old links
+keep working.
 
 ## WordPress-style content management
 

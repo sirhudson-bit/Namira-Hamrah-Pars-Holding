@@ -43,6 +43,7 @@ export default async function SiteLayout({
         siteName={settings.site_name}
         message={settings.maintenance_message}
         logoPath={settings.logo_path}
+        logoLightPath={settings.logo_light_path}
         phone={settings.phone}
         email={settings.email}
         isAdmin={false}
@@ -77,6 +78,7 @@ export default async function SiteLayout({
         settings={{
           site_name: settings.site_name,
           logo_path: settings.logo_path,
+          logo_light_path: settings.logo_light_path,
           logo_height: settings.logo_height,
           hours: settings.hours,
           phone: settings.phone,

@@ -590,6 +590,35 @@
 }
 
 
+/* ------------------------------------------------------------------- Logo ---
+   Two uploads power one mark: `logo_path` is the artwork drawn for light
+   backgrounds, `logo_light_path` the artwork for dark ones. Both live in the
+   DOM and the theme picks the visible one, so the swap is instant and works
+   inside the always-dark bands (`.band`, `.on-dark`) as well as under the
+   `data-theme` toggle. */
+.logo-swap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.logo-swap .logo-on-dark {
+  display: none;
+}
+[data-theme="dark"] .logo-swap .logo-on-light,
+.band .logo-swap .logo-on-light,
+.on-dark .logo-swap .logo-on-light,
+.admin-shell .logo-swap .logo-on-light {
+  display: none;
+}
+[data-theme="dark"] .logo-swap .logo-on-dark,
+.band .logo-swap .logo-on-dark,
+.on-dark .logo-swap .logo-on-dark,
+.admin-shell .logo-swap .logo-on-dark {
+  display: block;
+}
+/* A dark band nested in the light theme still needs the dark-background
+   artwork; a light `surface-50` panel nested inside a band must not. */
+
 /* ------------------------------------------------------------------ Admin ---
    The dashboard keeps WordPress *structure* — admin bar, dark menu rail, list
    tables with row actions, meta boxes, screen tabs — but wears the public

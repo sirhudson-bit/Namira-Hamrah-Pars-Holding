@@ -84,7 +84,7 @@ export type SiteSettings = {
  */
 export type HeaderSettings = Pick<
   SiteSettings,
-  "site_name" | "logo_path" | "logo_height" | "hours" | "phone" | "email"
+  "site_name" | "logo_path" | "logo_light_path" | "logo_height" | "hours" | "phone" | "email"
 >;
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -160,12 +160,24 @@ export const ORB_RANGE = {
  * belongs to the others (a missing `FormData` key reads as an empty string).
  */
 export const SETTINGS_TABS = {
+  /**
+   * Site identity and the site-wide switch. Maintenance lives here because it
+   * is a property of the site, not a separate feature — two fields do not earn
+   * their own screen.
+   */
   general: {
     label: "عمومی",
-    keys: ["site_name", "legal_name", "registration_number", "national_id"],
+    keys: [
+      "site_name",
+      "legal_name",
+      "registration_number",
+      "national_id",
+      "maintenance_mode",
+      "maintenance_message",
+    ],
   },
   contact: {
-    label: "تماس و نقشه",
+    label: "تماس و نشانی",
     keys: [
       "address",
       "phone",
@@ -178,17 +190,34 @@ export const SETTINGS_TABS = {
       "telegram",
     ],
   },
-  seo: { label: "سئو", keys: ["seo_title", "seo_description", "ga_id", "analytics_enabled"] },
-  reading: { label: "نمایش و خوانایی", keys: ["font_size", "line_height"] },
-  fonts: { label: "فونت", keys: ["font_family", "heading_font_family"] },
+  /** Logo, favicon, page-hero backdrop and the intro video: everything visual. */
+  branding: { label: "برند و ظاهر", keys: ["video_embed"] },
+  /**
+   * Typography is one decision, not two: the family, the size it is set at and
+   * the uploads that provide it belong on one screen. This merges the old
+   * «فونت» and «نمایش و خوانایی» tabs.
+   */
+  typography: {
+    label: "تایپوگرافی",
+    keys: ["font_family", "heading_font_family", "font_size", "line_height"],
+  },
+  seo: { label: "سئو و آمار", keys: ["seo_title", "seo_description", "ga_id", "analytics_enabled"] },
   chat: {
     label: "چت‌بات",
     keys: ["chat_enabled", "chat_title", "chat_welcome", "chat_extra_knowledge"],
   },
-  branding: { label: "لوگو و برند", keys: ["video_embed"] },
-  maintenance: { label: "حالت تعمیر", keys: ["maintenance_mode", "maintenance_message"] },
-  account: { label: "حساب کاربری", keys: [] as string[] },
 } as const satisfies Record<string, { label: string; keys: readonly string[] }>;
+
+/**
+ * Tabs that were merged away, mapped to the screen that absorbed them. Old
+ * bookmarks and the sidebar's own links keep working instead of falling back to
+ * «عمومی» and silently losing the reader's place.
+ */
+export const SETTINGS_TAB_ALIASES: Record<string, SettingsTabKey> = {
+  fonts: "typography",
+  reading: "typography",
+  maintenance: "general",
+};
 
 export type SettingsTabKey = keyof typeof SETTINGS_TABS;
 

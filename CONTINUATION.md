@@ -613,3 +613,32 @@ the login page).
 Persian-only (legal text was left in the source language). Assistant answers are written in Persian
 even when the interface is English. The translation provider is a public endpoint; if it is blocked
 from the server, pages fall back to Persian rather than failing.
+
+## Session 13 — theme-aware logo, consolidated settings
+
+**Logo, both themes.** `logo_path` and `logo_light_path` were both rendered into `Logo`, but only
+`logo_path` was ever used — so the upload for dark backgrounds never appeared, and an install that
+had uploaded the white artwork into `logo_path` showed an invisible mark in light mode. Both files
+now render inside `.logo-swap` (globals.css) and CSS picks the visible one from `[data-theme="dark"]`
+plus the always-dark selectors (`.band`, `.on-dark`, `.admin-shell`). No JS, so the swap is instant
+and cannot desync from the toggle. `HeaderSettings` carries `logo_light_path`; header, footer,
+maintenance screen and the about-page card all pass both. Labels now name the background
+(«پس‌زمینه روشن» / «پس‌زمینه تیره») instead of the artwork colour. `scripts/fix-logo-variants.ts`
+repairs installs where the files were uploaded the wrong way round: it measures mean luminance of
+each file's opaque pixels, swaps the two settings when inverted, and only writes with `--apply`.
+
+**Settings, six screens.** Merged by the question being answered, not by column: «فونت» +
+«نمایش و خوانایی» → **تایپوگرافی** (family, size, line height and the uploads on one screen);
+«حالت تعمیر» → **عمومی** (it is a property of the site); «حساب کاربری» dropped as a tab and moved
+behind **پروفایل و گذرواژه** in the screen header (`?view=profile`), because an account is not a
+site setting. `SETTINGS_TAB_ALIASES` maps the removed keys, so `?tab=fonts`, `?tab=reading` and
+`?tab=maintenance` still land on the screen that absorbed them.
+
+**Two bugs found while wiring it.** `chat_enabled` was in `CHECKBOX_SETTING_KEYS` but missing from
+`EDITABLE_SETTING_KEYS`, so the assistant switch wrote nothing and the bot could never be turned
+off. The native file input also rendered English chrome ("No file chosen") inside an RTL Persian
+form; it is now a styled `<label>` over a `sr-only` input, showing the chosen filename.
+
+**Layout follow-ups from review.** Logo height moved inside the logo card as a bare form, favicon
+got its own card with the file picker compacted, and the size control is a single row instead of a
+label/input/button zigzag.

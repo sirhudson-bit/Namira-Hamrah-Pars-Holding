@@ -89,7 +89,11 @@ export function Header({
       >
         <div className="container flex h-[72px] items-center justify-between gap-4">
           <Link href="/" aria-label={settings.site_name} className="shrink-0">
-            <Logo src={settings.logo_path || undefined} size={logoSize} />
+            <Logo
+              src={settings.logo_path || undefined}
+              srcLight={settings.logo_light_path || undefined}
+              size={logoSize}
+            />
           </Link>
 
           <nav aria-label="ناوبری اصلی" className="hidden items-center gap-0.5 xl:flex">

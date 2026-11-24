@@ -33,6 +33,7 @@ export function SettingsForm({
       <input type="hidden" name="_tab" value={tab} />
 
       {tab === "general" ? (
+        <>
         <div className="card p-5">
           <h2 className="mb-1 text-[14px] font-bold text-ink-900">اطلاعات هلدینگ</h2>
           <p className="mb-4 text-[12px] text-ink-500">
@@ -45,6 +46,30 @@ export function SettingsForm({
             <Field label="شناسه ملی" name="national_id" defaultValue={settings.national_id} />
           </div>
         </div>
+
+        <div className="card p-5">
+          <h2 className="mb-1 text-[14px] font-bold text-ink-900">دسترسی به سایت</h2>
+          <p className="mb-4 text-[12px] leading-6 text-ink-500">
+            با روشن کردن حالت نگهداری، بازدیدکنندگان به‌جای صفحات سایت یک صفحه «در حال
+            به‌روزرسانی» می‌بینند. پیشخوان و ورود ادمین همیشه باز می‌مانند.
+          </p>
+          <div className="space-y-4">
+            <Checkbox
+              label="حالت نگهداری فعال باشد"
+              name="maintenance_mode"
+              defaultChecked={settings.maintenance_mode === "true"}
+              hint="تا زمانی که تیک نخورده باشد، سایت برای همه باز است."
+            />
+            <Textarea
+              label="پیام صفحه نگهداری"
+              name="maintenance_message"
+              defaultValue={settings.maintenance_message}
+              rows={3}
+              hint="اگر خالی بماند، پیام پیش‌فرض نمایش داده می‌شود."
+            />
+          </div>
+        </div>
+        </>
       ) : null}
 
       {tab === "contact" ? (
@@ -118,40 +143,6 @@ export function SettingsForm({
         </div>
       ) : null}
 
-      {tab === "reading" ? (
-        <div className="card p-5">
-          <h2 className="mb-1 text-[14px] font-bold text-ink-900">نمایش و خوانایی</h2>
-          <p className="mb-4 text-[12px] text-ink-500">
-            اندازه پایه متن و فاصله خطوط برای کل سایت. مقادیر خارج از بازه به نزدیک‌ترین حد
-            مجاز اصلاح می‌شوند.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              label="اندازه فونت پایه (پیکسل)"
-              name="font_size"
-              type="number"
-              dir="ltr"
-              min={14}
-              max={18}
-              step={1}
-              defaultValue={settings.font_size}
-              hint="بازه ۱۴ تا ۱۸. پیش‌فرض ۱۶."
-            />
-            <Field
-              label="فاصله بین خطوط"
-              name="line_height"
-              type="number"
-              dir="ltr"
-              min={1.4}
-              max={2.2}
-              step={0.05}
-              defaultValue={settings.line_height}
-              hint="ضریب نسبت به اندازه فونت؛ مثلاً ۱٫۷۵."
-            />
-          </div>
-        </div>
-      ) : null}
-
       {tab === "branding" ? (
         <div className="card p-5">
           <h2 className="mb-1 text-[14px] font-bold text-ink-900">ویدئوی معرفی</h2>
@@ -203,83 +194,90 @@ export function SettingsForm({
         </div>
       ) : null}
 
-      {tab === "fonts" ? (
-        <div className="card p-5">
-          <h2 className="mb-1 text-[14px] font-bold text-ink-900">خانواده فونت</h2>
-          <p className="mb-4 text-[12px] leading-6 text-ink-500">
+      {tab === "typography" ? (
+        <>
+            <div className="card p-5">
+            <h2 className="mb-1 text-[14px] font-bold text-ink-900">خانواده فونت</h2>
+            <p className="mb-4 text-[12px] leading-6 text-ink-500">
             فونت متن و تیترها را انتخاب کنید. هر خانواده‌ای که اینجا دیده می‌شود، از فایل‌های
             بارگذاری‌شده در همین صفحه ساخته شده است. Vazirmatn به‌صورت پیش‌فرض همراه سایت است.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Select
-              label="فونت متن"
-              name="font_family"
-              options={fontOptions.map((family) => ({ value: family, label: family }))}
-              defaultValue={settings.font_family}
-            />
-            <Select
-              label="فونت تیترها"
-              name="heading_font_family"
-              options={[
-                { value: "", label: "مانند فونت متن" },
-                ...fontOptions.map((family) => ({ value: family, label: family })),
-              ]}
-              defaultValue={settings.heading_font_family}
-            />
-          </div>
-          <div className="mt-4 rounded border border-line-200 bg-surface-100 p-4">
-            <p className="mb-1 text-[10.5px] uppercase tracking-wide text-ink-400">پیش‌نمایش</p>
-            <p
-              className="text-[17px] leading-8 text-ink-900"
-              style={{ fontFamily: `"${settings.font_family}", Vazirmatn, sans-serif` }}
-            >
-              گروهی که در هر بازار، یک زنجیره کامل می‌سازد.
             </p>
-            <p
-              className="mt-1 text-[12px] text-ink-500"
-              style={{
-                fontFamily: `"${settings.heading_font_family || settings.font_family}", Vazirmatn, sans-serif`,
-              }}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                label="فونت متن"
+                name="font_family"
+                options={fontOptions.map((family) => ({ value: family, label: family }))}
+                defaultValue={settings.font_family}
+            />
+              <Select
+                label="فونت تیترها"
+                name="heading_font_family"
+                options={[
+                  { value: "", label: "مانند فونت متن" },
+                  ...fontOptions.map((family) => ({ value: family, label: family })),
+                ]}
+                defaultValue={settings.heading_font_family}
+            />
+            </div>
+            <div className="mt-4 rounded border border-line-200 bg-surface-100 p-4">
+              <p className="mb-1 text-[10.5px] uppercase tracking-wide text-ink-400">پیش‌نمایش</p>
+              <p
+                className="text-[17px] leading-8 text-ink-900"
+                style={{ fontFamily: `"${settings.font_family}", Vazirmatn, sans-serif` }}
             >
-              نامیرا همراه پارس — متن نمونه ۱۲۳۴۵
-            </p>
+                گروهی که در هر بازار، یک زنجیره کامل می‌سازد.
+              </p>
+              <p
+                className="mt-1 text-[12px] text-ink-500"
+                style={{
+                  fontFamily: `"${settings.heading_font_family || settings.font_family}", Vazirmatn, sans-serif`,
+                }}
+            >
+                نامیرا همراه پارس — متن نمونه ۱۲۳۴۵
+              </p>
+            </div>
           </div>
-        </div>
-      ) : null}
 
-      {tab === "maintenance" ? (
-        <div className="card p-5">
-          <h2 className="mb-1 text-[14px] font-bold text-ink-900">حالت تعمیر</h2>
-          <p className="mb-4 text-[12px] text-ink-500">
-            بازدیدکنندگان به‌جای صفحات سایت یک صفحه «در حال به‌روزرسانی» می‌بینند. پیشخوان و
-            ورود ادمین همیشه در دسترس می‌مانند.
-          </p>
-          <div className="space-y-4">
-            <Checkbox
-              label="حالت تعمیر فعال باشد"
-              name="maintenance_mode"
-              defaultChecked={settings.maintenance_mode === "true"}
-              hint="تا زمانی که تیک نخورده باشد، سایت برای همه باز است."
-            />
-            <Textarea
-              label="پیام صفحه تعمیر"
-              name="maintenance_message"
-              defaultValue={settings.maintenance_message}
-              rows={3}
-              hint="اگر خالی بماند، پیام پیش‌فرض نمایش داده می‌شود."
-            />
-          </div>
-        </div>
+            <div className="card p-5">
+              <h2 className="mb-1 text-[14px] font-bold text-ink-900">اندازه و خوانایی</h2>
+              <p className="mb-4 text-[12px] text-ink-500">
+                اندازه پایه متن و فاصله خطوط برای کل سایت. مقادیر خارج از بازه به نزدیک‌ترین حد
+                مجاز اصلاح می‌شوند.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field
+                  label="اندازه فونت پایه (پیکسل)"
+                  name="font_size"
+                  type="number"
+                  dir="ltr"
+                  min={14}
+                  max={18}
+                  step={1}
+                  defaultValue={settings.font_size}
+                  hint="بازه ۱۴ تا ۱۸. پیش‌فرض ۱۶."
+                />
+                <Field
+                  label="فاصله بین خطوط"
+                  name="line_height"
+                  type="number"
+                  dir="ltr"
+                  min={1.4}
+                  max={2.2}
+                  step={0.05}
+                  defaultValue={settings.line_height}
+                  hint="ضریب نسبت به اندازه فونت؛ مثلاً ۱٫۷۵."
+                />
+              </div>
+            </div>
+        </>
       ) : null}
 
       {state ? <FormFeedback ok={state.ok} message={state.message} /> : null}
 
-      {tab === "account" ? null : (
-        <div className="flex items-center gap-3">
-          <SubmitBar pending={pending} label="ذخیره تغییرات" />
-          <p className="text-[11px] text-ink-500">فقط فیلدهای همین بخش ذخیره می‌شوند.</p>
-        </div>
-      )}
+      <div className="flex items-center gap-3">
+        <SubmitBar pending={pending} label="ذخیره تغییرات" />
+        <p className="text-[11px] text-ink-500">فقط فیلدهای همین بخش ذخیره می‌شوند.</p>
+      </div>
     </form>
   );
 }

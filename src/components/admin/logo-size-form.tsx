@@ -6,25 +6,40 @@ import type { ActionResult } from "@/server/actions";
 import { Field, FormFeedback } from "@/components/admin/fields";
 
 /** Focused control for the header logo height (24–96 px). */
-export function LogoSizeForm({ value }: { value: string }) {
+export function LogoSizeForm({
+  value,
+  bare = false,
+}: {
+  value: string;
+  bare?: boolean;
+}) {
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(
     saveLogoSize,
     null,
   );
 
+  // `bare` drops the card chrome so this can sit inside the card that owns the
+  // logo files: a logo and the height it is drawn at are one decision, and two
+  // nested boxes for them read as two unrelated settings.
   return (
-    <form action={action} className="mt-5 rounded-2xl border border-line-200 p-5">
-      <div className="flex flex-wrap items-end gap-4">
-        <div className="w-44">
+    <form
+      action={action}
+      className={bare ? "border-t border-line-200 pt-5" : "mt-5 rounded-2xl border border-line-200 p-5"}
+    >
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="w-40 shrink-0">
           <Field
-            label="ارتفاع لوگو در سربرگ (پیکسل)"
+            label="ارتفاع لوگو (پیکسل)"
             name="logo_height"
             type="number"
+            dir="ltr"
+            min={24}
+            max={96}
             defaultValue={value}
-            hint="بین ۲۴ تا ۹۶. روی لوگوی بارگذاری‌شده و نشان پیش‌فرض اعمال می‌شود."
+            hint="بین ۲۴ تا ۹۶. روی نشان پیش‌فرض هم اعمال می‌شود."
           />
         </div>
-        <button type="submit" disabled={pending} className="btn-secondary shrink-0">
+        <button type="submit" disabled={pending} className="btn-secondary mt-[22px] shrink-0">
           {pending ? "در حال ذخیره…" : "ذخیره اندازه"}
         </button>
       </div>

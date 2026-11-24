@@ -208,12 +208,47 @@ async function main() {
   const settingsHtml = await (
     await fetch(`${BASE}/admin/settings?tab=branding`, { headers: { cookie } })
   ).text();
-  check("settings exposes a branding uploader", settingsHtml.includes("لوگوی اصلی"));
+  check(
+    "settings exposes both logo variants",
+    settingsHtml.includes("لوگوی پس‌زمینه روشن") && settingsHtml.includes("لوگوی پس‌زمینه تیره"),
+  );
 
   const chatSettings = await (
     await fetch(`${BASE}/admin/settings?tab=chat`, { headers: { cookie } })
   ).text();
   check("settings exposes the assistant tab", chatSettings.includes("دستیار گفتگو"));
+
+  // Merged screens: typography absorbed «فونت» + «خوانایی», general absorbed
+  // «حالت تعمیر», and the old URLs still land on the merged screen.
+  const typographySettings = await (
+    await fetch(`${BASE}/admin/settings?tab=typography`, { headers: { cookie } })
+  ).text();
+  check(
+    "typography tab merges family, size and line height",
+    typographySettings.includes("خانواده فونت") &&
+      typographySettings.includes("اندازه فونت پایه") &&
+      typographySettings.includes("فاصله بین خطوط"),
+  );
+  const legacyFontsTab = await fetch(`${BASE}/admin/settings?tab=fonts`, {
+    headers: { cookie },
+    redirect: "manual",
+  });
+  check(
+    "legacy ?tab=fonts still resolves to typography",
+    legacyFontsTab.status === 200,
+    `status ${legacyFontsTab.status}`,
+  );
+  const generalSettings = await (
+    await fetch(`${BASE}/admin/settings?tab=general`, { headers: { cookie } })
+  ).text();
+  check(
+    "maintenance lives on the general screen",
+    generalSettings.includes("حالت نگهداری فعال باشد"),
+  );
+  check(
+    "settings has no orphaned account tab",
+    !generalSettings.includes("تنظیمات حساب کاربری"),
+  );
   // Target the logo uploader specifically (value="logo", not "logo_light").
   const brandFields = extractActionFields(settingsHtml, /value="logo"/);
   const fd = new FormData();

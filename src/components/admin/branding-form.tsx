@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { useActionState, useId, useState } from "react";
+import { Trash2, Upload } from "lucide-react";
 import { uploadBrandAsset, removeBrandAsset } from "@/server/admin-actions";
 import type { ActionResult } from "@/server/actions";
 import { FormFeedback } from "@/components/admin/fields";
@@ -17,6 +17,7 @@ export function BrandingUploader({
   current,
   tone = "light",
   square = false,
+  compact = false,
 }: {
   kind: "logo" | "logo_light" | "favicon" | "page_hero_bg";
   label: string;
@@ -24,6 +25,8 @@ export function BrandingUploader({
   current: string;
   tone?: "light" | "dark";
   square?: boolean;
+  /** Drops the inner border/padding when the uploader already sits in a card. */
+  compact?: boolean;
 }) {
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(
     uploadBrandAsset,
@@ -32,9 +35,11 @@ export function BrandingUploader({
   // Guards the transport: an oversized file would otherwise be posted and
   // rejected before the action ran, showing the visitor nothing at all.
   const [localError, setLocalError] = useState("");
+  const [fileName, setFileName] = useState("");
+  const inputId = useId();
 
   return (
-    <div className="rounded-2xl border border-line-200 p-5">
+    <div className={compact ? "" : "rounded-2xl border border-line-200 p-5"}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-ink-900">{label}</p>
@@ -76,6 +81,7 @@ export function BrandingUploader({
       <form action={action} className="mt-4 flex flex-wrap items-center gap-3">
         <input type="hidden" name="kind" value={kind} />
         <input
+          id={inputId}
           type="file"
           name="file"
           accept={ACCEPT}
@@ -83,14 +89,20 @@ export function BrandingUploader({
           aria-label={label}
           onChange={(e) => {
             const file = e.target.files?.[0];
+            setFileName(file?.name ?? "");
             setLocalError(
-              file && file.size > MAX_BYTES
-                ? "حجم فایل باید کمتر از ۲ مگابایت باشد."
-                : "",
+              file && file.size > MAX_BYTES ? "حجم فایل باید کمتر از ۲ مگابایت باشد." : "",
             );
           }}
-          className="input w-auto flex-1 file:ml-3 file:rounded-btn file:border-0 file:bg-brand-700/20 file:px-3 file:py-1.5 file:text-accent"
+          className="peer sr-only"
         />
+        <label
+          htmlFor={inputId}
+          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-btn border border-line-200 bg-surface-100 px-3 py-2 text-[11.5px] text-ink-700 transition-colors hover:border-brand-500/60 hover:text-accent peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-brand-500"
+        >
+          <Upload className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span className="truncate">{fileName || "انتخاب فایل…"}</span>
+        </label>
         <button
           type="submit"
           disabled={pending || Boolean(localError)}

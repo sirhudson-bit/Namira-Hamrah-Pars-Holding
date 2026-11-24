@@ -1,33 +1,59 @@
 import { cn } from "@/lib/utils";
 
 /**
- * The holding wordmark. When an administrator has uploaded a logo it is used
- * instead; otherwise the built-in geometric "infinity" mark is drawn inline, so
- * the header is never empty and needs no asset pipeline.
+ * The holding wordmark.
+ *
+ * Two uploaded files can back it: the version drawn for a light background
+ * (dark artwork) and the version drawn for a dark background (light artwork).
+ * Both are rendered and CSS decides which one is visible, keyed on
+ * `[data-theme="dark"]` and on the always-dark containers (`.band`, `.on-dark`).
+ * So the mark swaps the moment the visitor hits the theme toggle — no
+ * JavaScript, no flash of the wrong logo, and no client state to desync.
+ *
+ * With only one file uploaded it is used for both themes; with none, the
+ * built-in geometric mark is drawn inline.
  */
 export function Logo({
   className,
   variant = "dark",
   src,
+  srcLight,
   alt = "نامیرا همراه پارس",
   size = 36,
 }: {
   className?: string;
+  /** `light` = artwork for a dark background, used by the built-in mark. */
   variant?: "dark" | "light";
+  /** Logo for light backgrounds (dark artwork). */
   src?: string | null;
+  /** Logo for dark backgrounds (light artwork). */
+  srcLight?: string | null;
   alt?: string;
   /** Rendered height in CSS pixels (admin-adjustable). */
   size?: number;
 }) {
-  if (src) {
+  const onLight = src || srcLight;
+  const onDark = srcLight || src;
+
+  if (onLight && onDark) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt={alt}
-        style={{ height: size }}
-        className={cn("w-auto object-contain", className)}
-      />
+      <span className={cn("logo-swap", className)} style={{ height: size }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={onLight}
+          alt={alt}
+          style={{ height: size }}
+          className="logo-on-light w-auto object-contain"
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={onDark}
+          alt=""
+          aria-hidden
+          style={{ height: size }}
+          className="logo-on-dark w-auto object-contain"
+        />
+      </span>
     );
   }
 

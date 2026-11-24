@@ -16,6 +16,7 @@ export function MaintenanceScreen({
   siteName,
   message,
   logoPath,
+  logoLightPath,
   phone,
   email,
   isAdmin,
@@ -23,6 +24,7 @@ export function MaintenanceScreen({
   siteName: string;
   message: string;
   logoPath?: string;
+  logoLightPath?: string;
   phone?: string;
   email?: string;
   isAdmin: boolean;
@@ -41,7 +43,7 @@ export function MaintenanceScreen({
 
       <div className="relative w-full max-w-xl text-center">
         <div className="mb-8 flex justify-center">
-          <Logo src={logoPath || undefined} />
+          <Logo src={logoPath || undefined} srcLight={logoLightPath || undefined} />
         </div>
 
         <span className="inline-flex items-center gap-2 rounded-full border border-line-200 bg-surface-100 px-4 py-1.5 text-xs font-medium text-accent">
