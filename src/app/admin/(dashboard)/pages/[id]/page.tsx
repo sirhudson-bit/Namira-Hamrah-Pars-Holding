@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Copy, ExternalLink, LayoutTemplate } from "lucide-react";
+import { ArrowRight, Copy, ExternalLink, LayoutTemplate } from "lucide-react";
 import { prisma } from "@/server/db";
 import { savePage, deletePage, duplicatePage } from "@/server/admin-actions";
 import { RecordForm, type FieldSpec } from "@/components/admin/record-form";
-import { AdminPageHeader } from "@/components/admin/page-header";
 import { PreviewPane } from "@/components/admin/preview-pane";
+import { ScreenHeader } from "@/components/admin/wp/screen";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { imagePositionField } from "@/lib/image-fields";
 import { formatJalaliLong } from "@/lib/format";
@@ -29,7 +29,11 @@ const SYSTEM_SLUGS = new Set([
   "refund-policy",
 ]);
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
   const { id } = await params;
   const page = await prisma.page.findUnique({ where: { id }, select: { title: true } });
   return { title: page ? `ویرایش ${page.title}` : "ویرایش صفحه" };
@@ -95,46 +99,66 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div>
-      <AdminPageHeader
-        title={`ویرایش صفحه: ${page.title}`}
-        description={`آدرس عمومی /${page.slug} · آخرین ویرایش ${formatJalaliLong(page.updatedAt)}`}
+      <ScreenHeader
+        title={page.title}
+        description={`/‎${page.slug} · آخرین ویرایش ${formatJalaliLong(page.updatedAt)}`}
+        breadcrumb={[
+          { label: "برگه‌ها", href: "/admin/pages" },
+          { label: page.title },
+        ]}
+        action={
+          <>
+            <Link href="/admin/pages" className="btn-secondary">
+              <ArrowRight className="h-4 w-4" aria-hidden />
+              بازگشت
+            </Link>
+            <Link href={publicHref} target="_blank" className="btn-secondary">
+              <ExternalLink className="h-4 w-4" aria-hidden />
+              مشاهده
+            </Link>
+          </>
+        }
       />
 
-      <div className="mb-6 flex flex-wrap items-center gap-3">
-        <Link href={publicHref} target="_blank" className="btn-secondary px-3 py-2 text-xs">
-          <ExternalLink className="h-4 w-4" aria-hidden /> مشاهده صفحه
-        </Link>
-        <Link href={`/admin/layout?page=${page.slug}`} className="btn-secondary px-3 py-2 text-xs">
-          <LayoutTemplate className="h-4 w-4" aria-hidden /> ابزارک‌های این صفحه ({blockCount})
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <Link href={`/admin/layout?page=${page.slug}`} className="btn-secondary">
+          <LayoutTemplate className="h-4 w-4" aria-hidden />
+          ابزارک‌های این صفحه ({blockCount.toLocaleString("fa-IR")})
         </Link>
         <form action={duplicatePage}>
           <input type="hidden" name="id" value={page.id} />
-          <button type="submit" className="btn-ghost px-2 py-1 text-xs">
-            <Copy className="h-3.5 w-3.5" aria-hidden /> کپی صفحه
+          <button type="submit" className="btn-ghost px-2 py-1 text-[12px]">
+            <Copy className="h-3.5 w-3.5" aria-hidden />
+            کپی صفحه
           </button>
         </form>
         {!isSystem ? <DeleteButton action={deletePage} id={page.id} label="حذف صفحه" /> : null}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <div className="card p-6">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+        <div className="min-w-0">
           <RecordForm
             action={savePage}
             hidden={{ id: page.id, ...(isSystem ? { slug: page.slug } : {}) }}
             fields={fields}
-            columns={2}
+            sideFields={["published", "image", "imagePosition", "seoTitle", "seoDesc"]}
+            layout="wp"
             submitLabel="ذخیره صفحه"
           />
         </div>
-        <details className="card h-fit p-6" open>
-          <summary className="cursor-pointer text-sm font-bold text-accent">پیش‌نمایش زنده</summary>
-          <div className="mt-4">
+
+        <div className="card h-fit">
+          <h2 className="border-b border-line-200 px-4 py-2.5 text-[13px] font-bold text-ink-900">
+            پیش‌نمایش زنده
+          </h2>
+          <div className="p-4">
             <PreviewPane src={publicHref} />
+            <p className="mt-3 text-[11px] leading-6 text-ink-500">
+              پیش‌نمایش پس از هر ذخیره بازخوانی می‌شود. برای ویرایش مستقیم روی خود سایت، از نوار
+              «ویرایش زنده» در پایین صفحات عمومی استفاده کنید.
+            </p>
           </div>
-          <p className="mt-3 text-xs leading-6 text-ink-500">
-            پیش‌نمایش پس از هر ذخیره بازخوانی می‌شود. برای ویرایش مستقیم روی خود سایت، از نوار «ویرایش زنده» در پایین صفحات عمومی استفاده کنید.
-          </p>
-        </details>
+        </div>
       </div>
     </div>
   );

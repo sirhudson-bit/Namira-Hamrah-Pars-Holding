@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ExternalLink, FilePlus2, Pencil, Copy } from "lucide-react";
+import { ArrowRight, Copy, Home, Plus } from "lucide-react";
 import { prisma } from "@/server/db";
 import { savePage, deletePage, duplicatePage } from "@/server/admin-actions";
 import { RecordForm } from "@/components/admin/record-form";
-import { AdminPageHeader } from "@/components/admin/page-header";
-import { DeleteButton } from "@/components/admin/delete-button";
 import { formatJalaliLong } from "@/lib/format";
+import { ScreenHeader, ListTable, SearchBox, CountLinks } from "@/components/admin/wp/screen";
+import { InlineDelete } from "@/components/admin/wp/inline-delete";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "صفحات سایت" };
+export const metadata: Metadata = { title: "برگه‌ها" };
 
 const SYSTEM_SLUGS = new Set([
   "about",
@@ -27,129 +27,160 @@ const SYSTEM_SLUGS = new Set([
   "refund-policy",
 ]);
 
+export default async function AdminPagesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ new?: string; s?: string; kind?: string }>;
+}) {
+  const params = await searchParams;
+  const isNew = params.new === "1";
+  const search = (params.s ?? "").trim();
+  const kind = params.kind === "system" || params.kind === "custom" ? params.kind : "";
 
+  const pages = await prisma.page.findMany({
+    where: {
+      ...(search ? { OR: [{ title: { contains: search } }, { slug: { contains: search } }] } : {}),
+      ...(kind === "system"
+        ? { slug: { in: Array.from(SYSTEM_SLUGS) } }
+        : kind === "custom"
+          ? { slug: { notIn: Array.from(SYSTEM_SLUGS) } }
+          : {}),
+    },
+    orderBy: [{ updatedAt: "desc" }],
+  });
 
-export default async function AdminPagesPage() {
-  const pages = await prisma.page.findMany({ orderBy: [{ updatedAt: "desc" }] });
-  const systemPages = pages.filter((page) => SYSTEM_SLUGS.has(page.slug));
-  const customPages = pages.filter((page) => !SYSTEM_SLUGS.has(page.slug));
+  const all = await prisma.page.findMany({ select: { slug: true } });
+  const systemCount = all.filter((page) => SYSTEM_SLUGS.has(page.slug)).length;
+  const customCount = all.length - systemCount;
+  const listHref = "/admin/pages";
 
   return (
     <div>
-      <AdminPageHeader
-        title="صفحات سایت"
-        description="صفحات را مانند وردپرس بسازید، ویرایش کنید و منتشر کنید. هر صفحه متن، تصویر شاخص، تنظیمات سئو و سازنده ابزارک دارد."
+      <ScreenHeader
+        title={isNew ? "برگه جدید" : "برگه‌ها"}
+        description={
+          isNew
+            ? "عنوان و نشانی برگه را انتخاب کنید؛ سپس متن و ابزارک‌ها را کامل می‌کنید."
+            : "برگه‌های ثابت سایت و برگه‌های سفارشی. هر برگه متن، تصویر شاخص، سئو و ابزارک دارد."
+        }
+        breadcrumb={isNew ? [{ label: "برگه‌ها", href: listHref }, { label: "برگه جدید" }] : [{ label: "برگه‌ها" }]}
+        action={
+          isNew ? (
+            <Link href={listHref} className="btn-secondary">
+              <ArrowRight className="h-4 w-4" aria-hidden />
+              بازگشت به فهرست
+            </Link>
+          ) : (
+            <Link href={`${listHref}?new=1`} className="btn-primary">
+              <Plus className="h-4 w-4" aria-hidden />
+              افزودن برگه
+            </Link>
+          )
+        }
       />
 
-      <details className="card mb-8 p-6" open={customPages.length === 0}>
-        <summary className="flex cursor-pointer items-center gap-2 text-sm font-bold text-accent">
-          <FilePlus2 className="h-4 w-4" aria-hidden /> افزودن صفحه جدید
-        </summary>
-        <div className="mt-5 border-t border-line-200 pt-5">
-          <RecordForm
-            action={savePage}
-            submitLabel="ساخت صفحه و ادامه ویرایش"
-            fields={[
-              { type: "text", name: "title", label: "عنوان صفحه", required: true },
-              {
-                type: "text",
-                name: "slug",
-                label: "نشانی صفحه (slug)",
-                dir: "ltr",
-                required: true,
-                placeholder: "مثلاً investor-relations",
-                hint: "فقط حروف کوچک انگلیسی، رقم و خط تیره. آدرس صفحه می‌شود /investor-relations",
-              },
-              { type: "checkbox", name: "published", label: "انتشار فوری", defaultChecked: false },
+      {isNew ? (
+        <div className="mx-auto max-w-2xl">
+          <div className="card p-5">
+            <RecordForm
+              action={savePage}
+              submitLabel="ساخت برگه و ادامه ویرایش"
+              columns={1}
+              fields={[
+                { type: "text", name: "title", label: "عنوان برگه", required: true },
+                {
+                  type: "text",
+                  name: "slug",
+                  label: "نشانی صفحه (slug)",
+                  dir: "ltr",
+                  required: true,
+                  placeholder: "مثلاً investor-relations",
+                  hint: "فقط حروف کوچک انگلیسی، رقم و خط تیره. آدرس صفحه می‌شود /investor-relations",
+                },
+                { type: "checkbox", name: "published", label: "انتشار فوری", defaultChecked: false },
+              ]}
+            />
+          </div>
+          <p className="mt-3 text-[11.5px] text-ink-500">
+            پس از ساخت، به ویرایشگر کامل صفحه هدایت می‌شوید تا متن و ابزارک‌ها را اضافه کنید.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {/* The front page is not a Page row; it has its own editor. */}
+          <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-line-200 bg-surface-100 text-accent">
+                <Home className="h-4 w-4" aria-hidden />
+              </span>
+              <div>
+                <p className="text-[13px] font-semibold text-ink-900">صفحه اصلی</p>
+                <p className="text-[11.5px] text-ink-500">
+                  هیروی صفحه اصلی، تصویر کاور، آمار و بنرها
+                </p>
+              </div>
+            </div>
+            <Link href="/admin/home" className="wp-action text-[12.5px]">
+              ویرایش صفحه اصلی
+            </Link>
+          </div>
+
+          <ListTable
+            columns={[
+              { label: "عنوان" },
+              { label: "نشانی", hideOnMobile: true, width: "170px" },
+              { label: "وضعیت", width: "110px" },
+              { label: "آخرین ویرایش", hideOnMobile: true, width: "160px" },
             ]}
+            toolbar={
+              <>
+                <CountLinks
+                  items={[
+                    { label: "همه", href: listHref, count: systemCount + customCount, active: !kind && !search },
+                    { label: "صفحات اصلی و حقوقی", href: `${listHref}?kind=system`, count: systemCount, active: kind === "system" },
+                    { label: "برگه‌های سفارشی", href: `${listHref}?kind=custom`, count: customCount, active: kind === "custom" },
+                  ]}
+                />
+                <SearchBox action={listHref} value={search} hidden={kind ? { kind } : {}} />
+              </>
+            }
+            rows={pages.map((page) => ({
+              id: page.id,
+              title: page.title,
+              href: `/admin/pages/${page.id}`,
+              externalHref: `/${page.slug}`,
+              badge: SYSTEM_SLUGS.has(page.slug) ? (
+                <span className="rounded bg-surface-200 px-1.5 py-0.5 text-[10px] text-ink-700">سیستمی</span>
+              ) : null,
+              cells: [
+                null,
+                <span key="slug" dir="ltr" className="text-ink-500">
+                  /{page.slug}
+                </span>,
+                page.published ? "منتشر شده" : "پیش‌نویس",
+                formatJalaliLong(page.updatedAt),
+              ],
+              actions: (
+                <>
+                  {!SYSTEM_SLUGS.has(page.slug) ? (
+                    <>
+                      <form action={duplicatePage} className="inline">
+                        <input type="hidden" name="id" value={page.id} />
+                        <button type="submit" className="wp-action">
+                          <Copy className="me-0.5 inline h-3 w-3" aria-hidden />
+                          کپی
+                        </button>
+                      </form>
+                      <InlineDelete action={deletePage} id={page.id} />
+                    </>
+                  ) : null}
+                </>
+              ),
+            }))}
+            empty={search ? "برگه‌ای با این عنوان پیدا نشد." : "هنوز برگه‌ای ساخته نشده است."}
           />
         </div>
-      </details>
-
-      <section className="mb-10">
-        <h2 className="mb-4 text-sm font-bold text-ink-900">صفحات اصلی و حقوقی</h2>
-        <div className="overflow-hidden rounded-card border border-line-200">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-50 text-xs text-ink-500">
-              <tr>
-                <th className="px-4 py-3 text-right font-medium">عنوان</th>
-                <th className="px-4 py-3 text-right font-medium">نشانی</th>
-                <th className="px-4 py-3 text-right font-medium">وضعیت</th>
-                <th className="px-4 py-3 text-right font-medium">آخرین ویرایش</th>
-                <th className="px-4 py-3 text-right font-medium">عملیات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {systemPages.map((page) => (
-                <tr key={page.id} className="border-t border-line-200">
-                  <td className="px-4 py-3 font-medium text-ink-900">{page.title}</td>
-                  <td className="px-4 py-3 text-xs text-ink-500" dir="ltr">/{page.slug}</td>
-                  <td className="px-4 py-3 text-xs">{page.published ? "منتشر شده" : "پیش‌نویس"}</td>
-                  <td className="px-4 py-3 text-xs text-ink-500">{formatJalaliLong(page.updatedAt)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Link href={`/admin/pages/${page.id}`} className="btn-ghost px-2 py-1 text-xs">
-                        <Pencil className="h-3.5 w-3.5" aria-hidden /> ویرایش
-                      </Link>
-                      <Link href={`/${page.slug}`} target="_blank" className="btn-ghost px-2 py-1 text-xs">
-                        <ExternalLink className="h-3.5 w-3.5" aria-hidden /> نمایش
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section>
-        <h2 className="mb-4 text-sm font-bold text-ink-900">صفحات سفارشی</h2>
-        {customPages.length === 0 ? (
-          <div className="card p-8 text-center text-sm text-ink-500">
-            هنوز صفحه سفارشی ساخته نشده است. با «افزودن صفحه جدید» شروع کنید.
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-card border border-line-200">
-            <table className="w-full text-sm">
-              <thead className="bg-surface-50 text-xs text-ink-500">
-                <tr>
-                  <th className="px-4 py-3 text-right font-medium">عنوان</th>
-                  <th className="px-4 py-3 text-right font-medium">نشانی</th>
-                  <th className="px-4 py-3 text-right font-medium">وضعیت</th>
-                  <th className="px-4 py-3 text-right font-medium">عملیات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customPages.map((page) => (
-                  <tr key={page.id} className="border-t border-line-200">
-                    <td className="px-4 py-3 font-medium text-ink-900">{page.title}</td>
-                    <td className="px-4 py-3 text-xs text-ink-500" dir="ltr">/{page.slug}</td>
-                    <td className="px-4 py-3 text-xs">{page.published ? "منتشر شده" : "پیش‌نویس"}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Link href={`/admin/pages/${page.id}`} className="btn-ghost px-2 py-1 text-xs">
-                          <Pencil className="h-3.5 w-3.5" aria-hidden /> ویرایش
-                        </Link>
-                        <Link href={`/${page.slug}`} target="_blank" className="btn-ghost px-2 py-1 text-xs">
-                          <ExternalLink className="h-3.5 w-3.5" aria-hidden /> نمایش
-                        </Link>
-                        <form action={duplicatePage}>
-                          <input type="hidden" name="id" value={page.id} />
-                          <button type="submit" className="btn-ghost px-2 py-1 text-xs">
-                            <Copy className="h-3.5 w-3.5" aria-hidden /> کپی
-                          </button>
-                        </form>
-                        <DeleteButton action={deletePage} id={page.id} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      )}
     </div>
   );
 }

@@ -164,6 +164,9 @@
 
   body {
     @apply bg-surface-50 font-sans text-ink-900 antialiased;
+    /* Family chosen in /admin/settings → «فونت»; falls back to the bundled
+       Vazirmatn when no custom family is set. */
+    font-family: var(--site-font-family, "Vazirmatn", system-ui, sans-serif);
     font-feature-settings: "ss02";
     background-image: radial-gradient(
       70% 45% at 50% 0%,
@@ -172,6 +175,18 @@
     );
     background-repeat: no-repeat;
     transition: background-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Display and heading roles can use their own family (a narrower or more
+     editorial face), while body copy keeps the reading family. */
+  :is(h1, h2, h3, h4, h5, h6),
+  .display-1,
+  .display-2,
+  .display-3,
+  .heading-1,
+  .heading-2,
+  .heading-3 {
+    font-family: var(--site-heading-family, var(--site-font-family, "Vazirmatn"));
   }
 
   /**
@@ -379,6 +394,60 @@
   .container-prose {
     @apply mx-auto w-full max-w-4xl px-5 sm:px-8;
   }
+  /**
+   * Wider measure for the experimental cover and chapter bands. The editorial
+   * layout needs the extra room; inner pages keep the calmer `.container`.
+   */
+  .container-wide {
+    width: 94%;
+    max-width: 1760px;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 640px) {
+    .container-wide {
+      padding-inline: 2rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .container-wide {
+      padding-inline: 3rem;
+    }
+  }
+  /* The vertical chapter index sits in this gutter from xl up, so content never
+     runs underneath it. */
+  @media (min-width: 1280px) {
+    .container-wide {
+      padding-inline-end: 6.5rem;
+    }
+  }
+
+  /* Horizontal chapter track: no visible scrollbar, still scrollable. */
+  .xp-track {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .xp-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Chapter number, set in the mono-ish Latin numeral style of the design. */
+  .xp-index {
+    @apply text-[10px] font-bold uppercase tracking-[0.24em] text-ink-400;
+  }
+
+  /* Grain: a 1px dot screen that keeps large photographic panels from banding. */
+  .xp-grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.16;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.5) 0.5px, transparent 0.5px);
+    background-size: 4px 4px;
+    mix-blend-mode: overlay;
+  }
+
   /* Subtle grid, used behind dark bands. */
   .grid-lines {
     background-image: linear-gradient(to right, rgba(127, 184, 170, 0.13) 1px, transparent 1px),
@@ -520,6 +589,177 @@
   }
 }
 
+
+/* ------------------------------------------------------------------ Admin ---
+   The dashboard keeps WordPress *structure* — admin bar, dark menu rail, list
+   tables with row actions, meta boxes, screen tabs — but wears the public
+   site's skin: the same tokens, the same teal accent and the same surfaces.
+   Nothing here re-declares the colour tokens, so the panel follows `data-theme`
+   exactly like the rest of the product. */
+.admin-shell {
+  background-color: rgb(var(--surface-50));
+  color: rgb(var(--ink-900));
+  /* Closed `<details>` popovers still contribute to the scrollable area at
+     phone widths, which shifted the whole shell sideways. Clipping the shell is
+     the same guard the public site uses. */
+  overflow-x: clip;
+}
+.admin-shell .card {
+  /* One card language with the site; the data screens do not need their own. */
+  box-shadow: 0 18px 40px -34px rgba(0, 0, 0, 0.5);
+}
+
+/* Sidebar menu — always the dark band surface, in both themes. */
+.wp-menu-link {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  color: rgba(234, 242, 239, 0.68);
+  font-size: 13px;
+  line-height: 1.5;
+  transition: color 140ms ease, background-color 140ms ease;
+}
+.wp-menu-link:hover,
+.wp-menu-link:focus-visible {
+  color: #fff;
+  background: rgba(127, 184, 170, 0.12);
+}
+.wp-menu-link[data-active="true"] {
+  background: #0f7c71; /* brand-700 */
+  color: #fff;
+}
+.wp-submenu-link {
+  display: block;
+  padding: 0.35rem 0.65rem 0.35rem 1.9rem;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: rgba(234, 242, 239, 0.55);
+  transition: color 140ms ease;
+}
+.wp-submenu-link:hover {
+  color: #a9dccf; /* brand-200 */
+}
+.wp-submenu-link[data-active="true"] {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* List tables. Row actions stay hidden until the row is hovered or focused,
+   which is exactly how a WordPress list table behaves. */
+.wp-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.wp-table thead th {
+  text-align: start;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgb(var(--ink-500));
+  border-bottom: 1px solid var(--line-200);
+  padding: 0.6rem 0.75rem;
+  white-space: nowrap;
+}
+.wp-table tbody td {
+  padding: 0.7rem 0.75rem;
+  font-size: 13px;
+  color: rgb(var(--ink-700));
+  border-bottom: 1px solid var(--line-200);
+  vertical-align: top;
+}
+.wp-table tbody tr {
+  transition: background-color 120ms ease;
+}
+.wp-table tbody tr:hover {
+  background: rgb(var(--surface-100));
+}
+.wp-table .wp-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+  margin-top: 0.3rem;
+  font-size: 11.5px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.wp-table tr:hover .wp-row-actions,
+.wp-table tr:focus-within .wp-row-actions {
+  opacity: 1;
+}
+@media (hover: none) {
+  .wp-table .wp-row-actions {
+    opacity: 1;
+  }
+}
+.wp-action {
+  color: rgb(var(--accent));
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: inherit;
+  cursor: pointer;
+  text-align: start;
+}
+.wp-action:hover {
+  color: rgb(var(--accent-strong));
+  text-decoration: underline;
+}
+.wp-action-danger {
+  color: #f87171;
+}
+.wp-action-danger:hover {
+  color: #fca5a5;
+}
+
+/* Screen tabs, as in WordPress settings screens. */
+.wp-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  border-bottom: 1px solid var(--line-200);
+  margin-bottom: 1.25rem;
+}
+.wp-tab {
+  padding: 0.5rem 0.8rem;
+  font-size: 12.5px;
+  color: rgb(var(--ink-500));
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  margin-bottom: -1px;
+  transition: color 140ms ease, background-color 140ms ease;
+}
+.wp-tab:hover {
+  color: rgb(var(--ink-900));
+}
+.wp-tab[data-active="true"] {
+  background: rgb(var(--surface));
+  border-color: var(--line-200);
+  color: rgb(var(--ink-900));
+  font-weight: 600;
+}
+.wp-tab[data-active="true"]::before {
+  content: "";
+  display: block;
+  height: 2px;
+  margin: -0.5rem -0.8rem 0.38rem;
+  background: rgb(var(--accent));
+  border-radius: 2px;
+}
+
+/* Admin bar sits above everything, like WP's #wpadminbar. */
+.wp-adminbar {
+  background: #070a09;
+  color: rgba(234, 242, 239, 0.72);
+  font-size: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 2px solid #0f7c71;
+}
+.wp-adminbar a:hover {
+  color: #fff;
+}
 
 /* ---------------------------------------------------------------- MDXEditor */
 /* The CMS editor is a ready-made MDXEditor widget; these overrides make it

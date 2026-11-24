@@ -2,6 +2,7 @@ import { cache } from "react";
 import { prisma } from "@/server/db";
 import { toPersianDigits } from "@/lib/format";
 import { extractEmbedUrl } from "@/lib/embed";
+import { DEFAULT_FONT_FAMILY, sanitizeFamily } from "@/server/fonts";
 
 export type SiteSettings = {
   site_name: string;
@@ -37,6 +38,14 @@ export type SiteSettings = {
   hero_video_label: string;
   /** One stat per line, written as `value|label`. */
   hero_stats: string;
+  /** Cover photograph of the home page (media library). */
+  hero_image: string;
+  hero_image_alt: string;
+  /* Typography family, managed from /admin/settings → «فونت». */
+  /** Family used for body copy; must exist in the font library. */
+  font_family: string;
+  /** Family used for headings; empty = same as body. */
+  heading_font_family: string;
   /* Reading experience, managed from /admin/settings → «نمایش و خوانایی». */
   /** Root font size of the public site, in CSS pixels. */
   font_size: string;
@@ -67,7 +76,7 @@ export type SiteSettings = {
  */
 export type HeaderSettings = Pick<
   SiteSettings,
-  "site_name" | "logo_path" | "logo_height" | "hours" | "phone"
+  "site_name" | "logo_path" | "logo_height" | "hours" | "phone" | "email"
 >;
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -103,6 +112,10 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   hero_cta_href: "/business-groups",
   hero_video_label: "ویدئوی معرفی",
   hero_stats: "14|سال تجربه\n5|گروه کسب‌وکار\n4|کانال فروش\n300+|همکار سازمانی",
+  hero_image: "/images/topics/hq.webp",
+  hero_image_alt: "مقر هلدینگ نامیرا همراه پارس",
+  font_family: "Vazirmatn",
+  heading_font_family: "",
   font_size: "16",
   line_height: "1.75",
   maintenance_mode: "false",
@@ -124,6 +137,52 @@ export const ORB_RANGE = {
   y: { min: 0, max: 100, fallback: 50 },
   size: { min: 20, max: 80, fallback: 44 },
 } as const;
+
+/**
+ * Settings grouped into the tabs of /admin/settings.
+ *
+ * The map is the single source of truth: the tab bar renders from it, the form
+ * renders the keys of the active tab, and `saveSettings` writes exactly those
+ * keys. Without the last part, submitting one tab would blank every field that
+ * belongs to the others (a missing `FormData` key reads as an empty string).
+ */
+export const SETTINGS_TABS = {
+  general: {
+    label: "عمومی",
+    keys: ["site_name", "legal_name", "registration_number", "national_id"],
+  },
+  contact: {
+    label: "تماس و نقشه",
+    keys: [
+      "address",
+      "phone",
+      "mobile",
+      "email",
+      "hours",
+      "map_embed",
+      "instagram",
+      "linkedin",
+      "telegram",
+    ],
+  },
+  seo: { label: "سئو", keys: ["seo_title", "seo_description", "ga_id", "analytics_enabled"] },
+  reading: { label: "نمایش و خوانایی", keys: ["font_size", "line_height"] },
+  fonts: { label: "فونت", keys: ["font_family", "heading_font_family"] },
+  branding: { label: "لوگو و برند", keys: ["video_embed"] },
+  maintenance: { label: "حالت تعمیر", keys: ["maintenance_mode", "maintenance_message"] },
+  account: { label: "حساب کاربری", keys: [] as string[] },
+} as const satisfies Record<string, { label: string; keys: readonly string[] }>;
+
+export type SettingsTabKey = keyof typeof SETTINGS_TABS;
+
+export const SETTINGS_TAB_ORDER = Object.keys(SETTINGS_TABS) as SettingsTabKey[];
+
+/** Settings a given tab is allowed to write. */
+export function settingsKeysForTab(tab: string | null | undefined): readonly string[] | null {
+  if (!tab) return null;
+  const entry = SETTINGS_TABS[tab as SettingsTabKey];
+  return entry ? entry.keys : null;
+}
 
 /** Reading range for the typography controls; anything outside is clamped. */
 export const FONT_SIZE_RANGE = { min: 14, max: 18, fallback: 16 } as const;
@@ -195,6 +254,9 @@ export const getSettings = cache(async (): Promise<SiteSettings> => {
     LINE_HEIGHT_RANGE.fallback,
   );
   settings.maintenance_mode = settings.maintenance_mode === "true" ? "true" : "false";
+  // A family name is pasted into CSS; strip anything that could close a rule.
+  settings.font_family = sanitizeFamily(settings.font_family) || DEFAULT_FONT_FAMILY;
+  settings.heading_font_family = sanitizeFamily(settings.heading_font_family);
 
   settings.hero_orb_align = (ORB_ALIGNMENTS as readonly string[]).includes(
     settings.hero_orb_align,

@@ -9,12 +9,11 @@ import {
   deleteApplication,
   deleteSubscriber,
 } from "@/server/admin-actions";
-import { DeleteButton } from "@/components/admin/delete-button";
-import { AdminPageHeader } from "@/components/admin/page-header";
+import { ScreenHeader, ScreenTabs } from "@/components/admin/wp/screen";
 import { formatJalaliLong, toPersianDigits } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "پیام‌ها و فرم‌ها" };
+export const metadata: Metadata = { title: "فرم‌ها" };
 
 const STATUS_LABELS: Record<string, string> = {
   new: "جدید",
@@ -22,178 +21,273 @@ const STATUS_LABELS: Record<string, string> = {
   archived: "بایگانی",
 };
 
-export default async function AdminFormsPage() {
+const TABS = [
+  { key: "messages", label: "پیام‌های تماس" },
+  { key: "applications", label: "درخواست‌های شغلی" },
+  { key: "subscribers", label: "خبرنامه" },
+];
+
+export default async function AdminFormsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const params = await searchParams;
+  const tab = TABS.some((entry) => entry.key === params.tab) ? (params.tab as string) : "messages";
+
   const [messages, applications, subscribers] = await Promise.all([
     prisma.contactMessage.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.jobApplication.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.newsletterSubscriber.findMany({ orderBy: { createdAt: "desc" } }),
   ]);
 
+  const unread = messages.filter((message) => !message.read).length;
+
   return (
-    <div className="space-y-10">
-      <AdminPageHeader
-        title="پیام‌ها و فرم‌ها"
-        description="پیام‌های تماس، درخواست‌های همکاری و اعضای خبرنامه."
+    <div>
+      <ScreenHeader
+        title="فرم‌ها"
+        description="پیام‌های تماس، درخواست‌های همکاری و اعضای خبرنامه که از سایت دریافت شده‌اند."
+        breadcrumb={[{ label: "فرم‌ها" }]}
         action={
-          <div className="flex flex-wrap gap-2">
+          <>
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/api/admin/export?type=messages" className="btn-secondary">
               <Download className="h-4 w-4" aria-hidden />
-              خروجی پیام‌ها (CSV)
+              خروجی پیام‌ها
             </a>
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/api/admin/export?type=applications" className="btn-secondary">
               <Download className="h-4 w-4" aria-hidden />
-              خروجی رزومه‌ها (CSV)
+              خروجی رزومه‌ها
             </a>
-          </div>
+          </>
         }
       />
 
-      {/* Contact messages */}
-      <section>
-        <h2 className="heading-3 mb-4">پیام‌های تماس ({toPersianDigits(messages.length)})</h2>
-        {messages.length === 0 ? (
-          <div className="card p-8 text-center text-sm text-ink-500">پیامی دریافت نشده است.</div>
-        ) : (
-          <ul className="space-y-3">
-            {messages.map((m) => (
-              <li key={m.id} className="card p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="flex items-center gap-2 text-sm font-bold text-ink-900">
-                      {!m.read ? <span className="h-2 w-2 rounded-full bg-brand-600" /> : null}
-                      {m.name}
-                    </p>
-                    <p className="mt-1 text-xs text-ink-500">
-                      <a href={`mailto:${m.email}`} dir="ltr" className="hover:text-accent">
-                        {m.email}
-                      </a>
-                      {m.phone ? (
-                        <>
-                          {" · "}
-                          <span dir="ltr">{m.phone}</span>
-                        </>
-                      ) : null}
-                    </p>
-                  </div>
-                  <time className="text-[11px] text-ink-500">{formatJalaliLong(m.createdAt)}</time>
-                </div>
-                {m.subject ? (
-                  <p className="mt-3 text-xs font-medium text-ink-700">موضوع: {m.subject}</p>
-                ) : null}
-                <p className="mt-2 whitespace-pre-line text-sm leading-7 text-ink-700">{m.message}</p>
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <form action={setMessageRead}>
-                    <input type="hidden" name="id" value={m.id} />
-                    <input type="hidden" name="read" value={m.read ? "false" : "true"} />
-                    <button type="submit" className="btn-ghost">
-                      {m.read ? "علامت‌گذاری به‌عنوان خوانده‌نشده" : "علامت‌گذاری خوانده‌شده"}
-                    </button>
-                  </form>
-                  <a href={`mailto:${m.email}`} className="btn-secondary">
-                    <Mail className="h-4 w-4" aria-hidden />
-                    پاسخ
-                  </a>
-                  <DeleteButton action={deleteContactMessage} id={m.id} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <ScreenTabs
+        active={tab}
+        tabs={TABS.map((entry) => ({
+          key: entry.key,
+          label:
+            entry.key === "messages" && unread
+              ? `${entry.label} (${toPersianDigits(unread)})`
+              : entry.label,
+          href: `/admin/forms?tab=${entry.key}`,
+        }))}
+      />
 
-      {/* Applications */}
-      <section>
-        <h2 className="heading-3 mb-4">درخواست‌های همکاری ({toPersianDigits(applications.length)})</h2>
-        {applications.length === 0 ? (
-          <div className="card p-8 text-center text-sm text-ink-500">درخواستی ثبت نشده است.</div>
-        ) : (
-          <ul className="space-y-3">
-            {applications.map((a) => (
-              <li key={a.id} className="card p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-bold text-ink-900">{a.name}</p>
-                    <p className="mt-1 text-xs text-ink-500">
-                      {a.position} ·{" "}
-                      <a href={`mailto:${a.email}`} dir="ltr" className="hover:text-accent">
-                        {a.email}
-                      </a>{" "}
-                      · <span dir="ltr">{a.phone}</span>
-                    </p>
-                  </div>
-                  <time className="text-[11px] text-ink-500">{formatJalaliLong(a.createdAt)}</time>
-                </div>
-                {a.coverLetter ? (
-                  <p className="mt-2 whitespace-pre-line text-sm leading-7 text-ink-700">
-                    {a.coverLetter}
-                  </p>
-                ) : null}
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  {a.resumePath ? (
-                    <Link href={`/api/admin/resume/${a.id}`} className="btn-secondary">
-                      <Download className="h-4 w-4" aria-hidden />
-                      دانلود رزومه
-                    </Link>
-                  ) : (
-                    <span className="text-xs text-ink-500">رزومه‌ای پیوست نشده است.</span>
-                  )}
-                  <form action={setApplicationStatus} className="flex items-center gap-2">
-                    <input type="hidden" name="id" value={a.id} />
-                    <label htmlFor={`status-${a.id}`} className="text-xs text-ink-500">
-                      وضعیت:
-                    </label>
-                    <select
-                      id={`status-${a.id}`}
-                      name="status"
-                      defaultValue={a.status}
-                      className="input w-auto py-1.5 text-xs"
-                    >
-                      {Object.entries(STATUS_LABELS).map(([v, l]) => (
-                        <option key={v} value={v}>
-                          {l}
-                        </option>
-                      ))}
-                    </select>
-                    <button type="submit" className="btn-ghost">
-                      ذخیره
-                    </button>
-                  </form>
-                  <DeleteButton action={deleteApplication} id={a.id} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* Subscribers */}
-      <section>
-        <h2 className="heading-3 mb-4">اعضای خبرنامه ({toPersianDigits(subscribers.length)})</h2>
-        {subscribers.length === 0 ? (
-          <div className="card p-8 text-center text-sm text-ink-500">عضوی ثبت نشده است.</div>
-        ) : (
-          <div className="card divide-y divide-line-200">
-            {subscribers.map((s) => (
-              <div key={s.id} className="flex items-center justify-between gap-3 p-4">
-                <div>
-                  <p className="text-sm text-ink-900" dir="ltr">
-                    {s.email}
-                  </p>
-                  <p className="text-[11px] text-ink-500">{formatJalaliLong(s.createdAt)}</p>
-                </div>
-                <form action={deleteSubscriber}>
-                  <input type="hidden" name="id" value={s.id} />
-                  <button type="submit" className="btn-ghost" aria-label="حذف">
-                    <Trash2 className="h-4 w-4" aria-hidden />
-                  </button>
-                </form>
-              </div>
-            ))}
+      {tab === "messages" ? (
+        <div className="card overflow-hidden">
+          {messages.length === 0 ? (
+            <p className="px-4 py-10 text-center text-[13px] text-ink-500">پیامی دریافت نشده است.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="wp-table">
+                <thead>
+                  <tr>
+                    <th>فرستنده</th>
+                    <th className="hidden md:table-cell">موضوع</th>
+                    <th className="hidden md:table-cell">تاریخ</th>
+                    <th>وضعیت</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {messages.map((message) => (
+                    <tr key={message.id}>
+                      <td className="min-w-[240px]">
+                        <div className="flex items-start gap-2">
+                          {!message.read ? (
+                            <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-red-500" aria-hidden />
+                          ) : null}
+                          <div className="min-w-0">
+                            <p className="font-semibold text-ink-900">{message.name}</p>
+                            <p className="text-[11px] text-ink-500">
+                              <a href={`mailto:${message.email}`} dir="ltr" className="hover:text-accent">
+                                {message.email}
+                              </a>
+                              {message.phone ? <span dir="ltr"> · {message.phone}</span> : null}
+                            </p>
+                            <details className="mt-1">
+                              <summary className="cursor-pointer text-[11px] text-accent">
+                                متن پیام
+                              </summary>
+                              <p className="mt-1.5 whitespace-pre-line rounded border border-line-200 bg-surface-100 p-2.5 text-[12px] leading-6 text-ink-700">
+                                {message.message}
+                              </p>
+                            </details>
+                            <div className="wp-row-actions">
+                              <form action={setMessageRead} className="inline">
+                                <input type="hidden" name="id" value={message.id} />
+                                <input type="hidden" name="read" value={message.read ? "false" : "true"} />
+                                <button type="submit" className="wp-action">
+                                  {message.read ? "خوانده‌نشده" : "خوانده شد"}
+                                </button>
+                              </form>
+                              <a href={`mailto:${message.email}`} className="wp-action">
+                                پاسخ
+                              </a>
+                              <form action={deleteContactMessage} className="inline">
+                                <input type="hidden" name="id" value={message.id} />
+                                <button type="submit" className="wp-action wp-action-danger">
+                                  حذف
+                                </button>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="hidden md:table-cell">{message.subject || "—"}</td>
+                      <td className="hidden whitespace-nowrap md:table-cell">
+                        {formatJalaliLong(message.createdAt)}
+                      </td>
+                      <td>
+                        <span
+                          className={`inline-flex rounded px-1.5 py-0.5 text-[10.5px] ${
+                            message.read ? "bg-surface-200 text-ink-700" : "bg-red-500 text-white"
+                          }`}
+                        >
+                          {message.read ? "خوانده‌شده" : "جدید"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="border-t border-line-200 px-4 py-2.5 text-[11.5px] text-ink-500">
+            {toPersianDigits(messages.length)} پیام · {toPersianDigits(unread)} خوانده‌نشده
           </div>
-        )}
-      </section>
+        </div>
+      ) : null}
+
+      {tab === "applications" ? (
+        <div className="card overflow-hidden">
+          {applications.length === 0 ? (
+            <p className="px-4 py-10 text-center text-[13px] text-ink-500">درخواستی ثبت نشده است.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="wp-table">
+                <thead>
+                  <tr>
+                    <th>متقاضی</th>
+                    <th className="hidden md:table-cell">موقعیت</th>
+                    <th className="hidden md:table-cell">تاریخ</th>
+                    <th>وضعیت</th>
+                    <th>رزومه</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {applications.map((application) => (
+                    <tr key={application.id}>
+                      <td className="min-w-[220px]">
+                        <p className="font-semibold text-ink-900">{application.name}</p>
+                        <p className="text-[11px] text-ink-500" dir="ltr">
+                          {application.email} · {application.phone}
+                        </p>
+                        {application.coverLetter ? (
+                          <details className="mt-1">
+                            <summary className="cursor-pointer text-[11px] text-accent">متن درخواست</summary>
+                            <p className="mt-1.5 whitespace-pre-line rounded border border-line-200 bg-surface-100 p-2.5 text-[12px] leading-6">
+                              {application.coverLetter}
+                            </p>
+                          </details>
+                        ) : null}
+                        <div className="wp-row-actions">
+                          <form action={deleteApplication} className="inline">
+                            <input type="hidden" name="id" value={application.id} />
+                            <button type="submit" className="wp-action wp-action-danger">
+                              حذف
+                            </button>
+                          </form>
+                        </div>
+                      </td>
+                      <td className="hidden md:table-cell">{application.position}</td>
+                      <td className="hidden whitespace-nowrap md:table-cell">
+                        {formatJalaliLong(application.createdAt)}
+                      </td>
+                      <td>
+                        <form action={setApplicationStatus} className="flex items-center gap-1.5">
+                          <input type="hidden" name="id" value={application.id} />
+                          <label htmlFor={`status-${application.id}`} className="sr-only">
+                            وضعیت
+                          </label>
+                          <select
+                            id={`status-${application.id}`}
+                            name="status"
+                            defaultValue={application.status}
+                            className="input w-auto py-1 text-[11.5px]"
+                          >
+                            {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                              <option key={value} value={value}>
+                                {label}
+                              </option>
+                            ))}
+                          </select>
+                          <button type="submit" className="wp-action">
+                            ذخیره
+                          </button>
+                        </form>
+                      </td>
+                      <td>
+                        {application.resumePath ? (
+                          <Link
+                            href={`/api/admin/resume/${application.id}`}
+                            className="inline-flex items-center gap-1 text-[11.5px] text-accent hover:underline"
+                          >
+                            <Download className="h-3.5 w-3.5" aria-hidden />
+                            دانلود
+                          </Link>
+                        ) : (
+                          <span className="text-[11px] text-ink-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="border-t border-line-200 px-4 py-2.5 text-[11.5px] text-ink-500">
+            {toPersianDigits(applications.length)} درخواست
+          </div>
+        </div>
+      ) : null}
+
+      {tab === "subscribers" ? (
+        <div className="card overflow-hidden">
+          <div className="flex items-center justify-between gap-3 border-b border-line-200 px-4 py-2.5">
+            <span className="inline-flex items-center gap-2 text-[12.5px] text-ink-700">
+              <Mail className="h-4 w-4 text-ink-400" aria-hidden />
+              {toPersianDigits(subscribers.length)} عضو
+            </span>
+            <span className="text-[11px] text-ink-500">فقط ایمیل‌هایی که رضایت داده‌اند.</span>
+          </div>
+          {subscribers.length === 0 ? (
+            <p className="px-4 py-10 text-center text-[13px] text-ink-500">عضوی ثبت نشده است.</p>
+          ) : (
+            <ul className="divide-y divide-line-200">
+              {subscribers.map((subscriber) => (
+                <li key={subscriber.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-[12.5px] text-ink-900" dir="ltr">
+                      {subscriber.email}
+                    </p>
+                    <p className="text-[10.5px] text-ink-500">{formatJalaliLong(subscriber.createdAt)}</p>
+                  </div>
+                  <form action={deleteSubscriber}>
+                    <input type="hidden" name="id" value={subscriber.id} />
+                    <button type="submit" className="wp-action wp-action-danger" aria-label="حذف">
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -290,6 +290,22 @@ model MediaAsset {
   updatedAt DateTime @default(now()) @updatedAt
 }
 
+/// Uploaded web-font files. Each row becomes one `@font-face` rule in the
+/// document head; `family` groups weights/styles into a usable family that the
+/// typography settings can select for body or headings.
+model FontAsset {
+  id        String   @id @default(cuid())
+  family    String
+  /// CSS font-weight this file covers: 100–900, or `normal`.
+  weight    String   @default("400")
+  style     String   @default("normal") // normal | italic
+  filename  String
+  path      String
+  mime      String
+  size      Int
+  createdAt DateTime @default(now())
+}
+
 /// Namira Labs innovation projects.
 model InnovationProject {
   id          String  @id @default(cuid())

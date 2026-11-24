@@ -520,3 +520,60 @@ are still stored as Markdown, so the existing `renderMarkdown` path and old cont
 **Notes.** The package adds CodeMirror/Lexical chunks; the route is dynamically imported so the
 public site does not load the editor bundle. Keep the hidden input as the form value when changing
 the editor wrapper.
+
+---
+
+## 14. UI/UX rebuild — experimental cover, WordPress-structure dashboard
+
+This pass replaced the home page composition and the whole admin shell. The data model only gained
+`FontAsset`; every existing entity, action and route (except the removed `/admin/content`) is
+unchanged.
+
+**Public site.**
+- `/` is now a six-chapter editorial page: cover (`#cover`), business groups, about, value chain,
+  Labs, channels, news, closing CTA. Each chapter has an `xp-index` marker and its own composition.
+- Navigation is experimental rather than a dropdown bar: `src/components/site/menu-overlay.tsx` is a
+  full-screen, numbered index with child links and a photograph preview; it is portalled to `<body>`
+  (inside the sticky header its `z-95` lost to the cookie bar's `z-80`). `chapter-rail.tsx` is a
+  fixed scroll-spy index in the xl gutter and `container-wide` reserves that gutter from 1280px.
+- The five groups are a snap-scrolling track (`group-scroller.tsx`), not a 3-column grid — five cards
+  left an orphan cell. RTL arrow logic uses `scrollBy` with a computed direction.
+- The particle sphere moved from a fixed full-viewport canvas into a lens inside the cover photo
+  (`cover-gate.tsx`). `hero_image` / `hero_image_alt` are new settings; `hero_orb_size` now sizes the
+  lens and the align/x/y controls were removed from `/admin/home` because they no longer apply.
+- 15 topical photographs live in `public/images/topics/` and are seeded into groups, stores, news,
+  articles and page heroes. `scripts/apply-topic-images.ts` backfills an existing DB only where
+  `image` is empty.
+
+**Admin.**
+- New shell: `components/admin/wp/{admin-bar,sidebar,screen}.tsx`. WordPress structure (admin bar,
+  dark rail with expandable submenus, list tables with hover row actions, meta-box editors, settings
+  tabs) wearing the site's tokens. `/admin` follows `data-theme`; the rail is always the dark band.
+- `/admin/news`, `blog`, `business-groups`, `stores`, `careers`, `pages` follow **list → `?edit=` /
+  `?new=` editor**; `RecordForm` gained `layout="wp"` + `sideFields` for the meta box.
+- `/admin/content` was removed; its five entities now live in `/admin/site-content?type=…` with tabs.
+  `/admin/tools` was added (CSV exports, sitemap/robots, content census).
+- `/admin/settings` is tabbed (`SETTINGS_TABS` in `server/settings.ts`); `saveSettings` filters the
+  posted keys by tab, because an unposted field reads as `""` and would blank the other tabs.
+- Fonts: `FontAsset`, `/admin/settings?tab=fonts`, magic-byte validation, `server/fonts.ts` builds
+  `@font-face` + the `--site-font-family` / `--site-heading-family` variables in the root layout.
+- Dashboard, forms, media library, menus and widget builder were rebuilt on the same table/editor
+  language. `components/admin/page-header.tsx`, `components/admin/sidebar.tsx`, `topbar.tsx` and
+  `components/motion/hero-orb.tsx` were deleted.
+
+**Verification (this pass).**
+- `npx tsc --noEmit`, `npx eslint .` — clean; `npm test` — 29/29; `npm run build` — see §2 table.
+- Browser, dev server: every public route at 320/360/390/768/1024/1440 has
+  `scrollWidth - clientWidth === 0`; the full-screen index opens above the cookie bar with all 8
+  sections; the chapter rail tracks and jumps; group photos and news photos load (`naturalWidth >
+  0`); the font pipeline was proven end-to-end by inserting a test `@font-face` (family resolved on
+  `body` and `h1`, `document.fonts.check` true) and then removing it.
+- Admin, browser: all 21 screens listed by the QA sweep returned 200 with an `h1` and no horizontal
+  overflow; the mobile drawer opens with submenus and the user footer; list row actions appear on
+  hover.
+- `npm run verify` was updated for the new markup (cover id, editor URLs, branding tab, media
+  `?new=1`); run it against `next start` after a build.
+
+**Decisions not to reopen.** The cover deliberately does not use the old fixed `.sphere`; the admin
+rail is deliberately dark in both themes; settings deliberately save per tab; the chapter rail is
+desktop-only (`xl`) because at phone widths it collided with the cards.

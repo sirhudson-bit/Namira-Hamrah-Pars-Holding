@@ -17,6 +17,18 @@ type and a single teal accent — grounded in a study of leading holding-company
 Partners, Novo Holdings, Prior Holdings, Vivium, Reyes Holdings) plus WebGL craft guidance from
 Awwwards-tier builds.
 
+- **Experimental navigation on the home page.** The cover is a full-viewport composition — an
+  oversized masked headline, a tall photographic "gate" with the particle sphere set into it as a
+  lens, and a stat rail. Navigation is not a dropdown bar: the header's **فهرست** button opens a
+  full-screen index (numbered sections, child links, a photograph preview that follows the pointer,
+  contact details), and a fixed **chapter rail** on the outer edge tracks progress through the six
+  chapters and jumps between them. Content is discovered by scrolling chapters, not by browsing a
+  menu tree.
+- **Chapters, not stacked sections.** Five business groups live on a snap-scrolling horizontal
+  track (a 3-column grid leaves an orphan with five cards), the value chain is a numbered hairline
+  list with hover thumbnails, and the news block is an editorial featured card plus two side cards.
+  Every chapter carries its own `01 — …` index and a rule.
+
 - **Depth through elevation, not decoration.** Four surface steps — canvas `#0B0F0E`, panel
   `#121A18`, tile `#16211E`, band `#070A09` — separated by 1px hairlines at 9% white and a soft
   teal glow, with no drop shadows carrying the weight.
@@ -154,9 +166,26 @@ disorganised page:
 
 ### Admin panel
 
-Modelled on the WordPress dashboard: quick actions, an "at a glance" count grid, recent content
-activity, a site-health checklist and the contact/application inbox. The behaviours that matter:
+The dashboard is **WordPress in structure, site-branded in skin**: the same admin bar, dark menu
+rail with expandable submenus, list tables with hover row actions, meta-box editors and screen
+tabs — wearing the public site's tokens (near-black surfaces, teal accent) rather than WordPress
+blue. `/admin` always follows the site theme.
 
+- **One menu per job.** نوشته‌ها (news + articles), رسانه, برگه‌ها, نمایش (menus, widgets, home),
+  محتوای سایت (groups, stores, jobs, services, units, innovation, team/history), فرم‌ها, تنظیمات,
+  ابزارها. Submenus point at real anchors (`?tab=seo`, `?type=team`, `?new=1`), so every screen is
+  one click from the rail and deep-linkable.
+- **List table → editor.** Each entity has a searchable list (status counts, columns, row actions
+  revealed on hover) and a separate editor opened by `?edit=<id>` / `?new=1`: content fields in the
+  wide column, a side meta box holding publish state, order and image, with Save/Delete in the same
+  place on every screen. No `<details>` accordions.
+- **Settings are tabs.** عمومی، تماس و نقشه، سئو، نمایش و خوانایی، فونت، لوگو و برند، حالت تعمیر،
+  حساب کاربری. Each tab is its own form and **only posts its own keys** — `saveSettings` filters
+  through `SETTINGS_TABS` so saving one tab cannot blank the others.
+- **Fonts are content.** `/admin/settings?tab=fonts` uploads woff2/woff/ttf/otf (magic-byte checked,
+  4 MB cap), groups files into a family by name, previews each family, and lets you pick separate
+  body and heading families. The root layout emits the `@font-face` rules and the CSS variables on
+  first paint; Vazirmatn stays the bundled fallback.
 - **Every top-level page is editable.** Each route has a `Page` row (listed under `/admin/pages`,
   grouped into main and legal). `PageHero` takes a `slug`, reads that row, and falls back to the
   page's built-in copy when the row is missing or unpublished — so a fresh install looks identical
@@ -167,20 +196,17 @@ activity, a site-health checklist and the contact/application inbox. The behavio
   `http(s)` sources.
 - **Edit forms are built from the record** (`fields(record)` per entity). A static field list is the
   bug that once made every edit form open blank and overwrite the row on save.
-- **Light/dark toggle** in the admin top bar, sharing the site's theme provider.
-- **`/admin/home` governs the hero widget.** Eyebrow, title, lead, both buttons, the stat lines
-  (`value|label`, one per line) and an on/off switch for the animated sphere. The rail shows a live
-  preview of the sphere and of the parsed stats, and saving revalidates the public home page.
-- **Home banners are CRUD content.** `/admin/home` → «بنرهای صفحه اصلی» adds any number of slides
-  (image, title, subtitle, link, CTA label, order, active). The public home renders them as an
-  accessible slider with a pause control. With no banner, the section does not render.
+- **`/admin/home` governs the cover.** Eyebrow, title, lead, buttons, stat lines (`value|label`), the
+  cover photograph and the sphere toggle/lens size, plus the banner slider CRUD.
+- **Home banners are CRUD content.** Image, title, subtitle, link, CTA label, order, active; the
+  public home renders them as an accessible slider with a pause control.
 - **Images are editable on every content type.** Business groups, stores, news, articles, job
   openings, pages (hero backdrop) and media all use the shared image field: a URL box plus the
   media-library picker and a live preview. Empty means the previous placeholder/icon layout.
 - **The media library is editable.** Each asset can be renamed (title/alt), removed from the public
   gallery, or replaced with a new file. Replacing keeps the old file when stored content still
   references it, so embedded images never break silently.
-- **`/admin/layout` is a page builder.** Pick a page, then add, reorder, hide or delete widgets:
+- **`/admin/layout` is a widget builder.** Pick a page, then add, reorder, hide or delete widgets:
   heading, Markdown text, image, image+text split, feature cards, stats, CTA, gallery, video and
   spacer. Widgets render below the page hero, ahead of the page's built-in content, and only the
   chosen page is affected.
@@ -301,6 +327,30 @@ In `/admin/settings`, the **«لوگو و فاوآیکون»** section uploads:
 Uploads are limited to PNG/SVG/WEBP/JPG/ICO and 2 MB (page backdrops 8 MB), are written to
 `public/uploads/branding/`, replace the previous file (so nothing accumulates), and are read
 back through `getSettings()`.
+
+## Typography
+
+The bundled face is Vazirmatn (`public/fonts`, self-hosted). `/admin/settings?tab=fonts` adds any
+number of web fonts and lets the administrator choose **separate body and heading families**:
+
+- Files: `woff2`, `woff`, `ttf`, `otf` — up to 4 MB, validated by extension **and** magic bytes
+  (`wOF2`, `wOFF`, `OTTO`, TrueType), stored as UUID names under `public/uploads/fonts/`.
+- A family is the set of uploaded files sharing the «نام خانواده» field; upload one file per weight
+  (300–900) and the browser picks the right one through `@font-face`.
+- `font_family` / `heading_font_family` are sanitised on write *and* on read (a family name ends up
+  inside a `<style>` block), and the root layout renders the `@font-face` rules inline so the first
+  paint already uses the chosen face. `font-display: swap` keeps copy visible while it loads.
+- Reading size and line-height stay in «نمایش و خوانایی» (`font_size`, `line_height`), applied as
+  CSS variables on `<html>`.
+
+## Topic photography
+
+`public/images/topics/` ships 15 topical photographs (digital retail, automotive, automotive parts,
+grocery, food production, industrial, warehouse, logistics, AI/technology, team, headquarters,
+call-center support, corporate agreement, store interior). Business groups, stores, news, articles
+and the inner-page heroes are seeded with them; `scripts/apply-topic-images.ts` fills the same paths
+into an existing database **only where `image` is still empty**, so it never overwrites a choice
+made in the admin.
 
 ## Setup
 

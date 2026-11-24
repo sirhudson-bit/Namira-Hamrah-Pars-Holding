@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import { getSettings, DEFAULT_SETTINGS } from "@/server/settings";
+import { familyStack, fontFaceCss, getFontAssets } from "@/server/fonts";
 import { SITE_URL } from "@/lib/site";
 import {
   ThemeProvider,
@@ -43,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const settings = await getSettings();
+  const [settings, fonts] = await Promise.all([getSettings(), getFontAssets()]);
 
   /**
    * Reading settings, resolved once per request and handed to CSS as variables
@@ -54,7 +55,16 @@ export default async function RootLayout({
   const typography = {
     "--site-font-size": `${settings.font_size}px`,
     "--site-line-height": settings.line_height,
+    "--site-font-family": familyStack(settings.font_family),
+    "--site-heading-family": familyStack(settings.heading_font_family || settings.font_family),
   } as CSSProperties;
+
+  /**
+   * Uploaded fonts become `@font-face` rules here, in the same document, so the
+   * family is available on first paint. `font-display: swap` means a slow file
+   * never hides the copy.
+   */
+  const fontCss = fontFaceCss(fonts);
 
   return (
     <html
@@ -67,6 +77,7 @@ export default async function RootLayout({
       <body>
         {/* Applies the stored theme before paint, so there is no flash. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        {fontCss ? <style dangerouslySetInnerHTML={{ __html: fontCss }} /> : null}
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

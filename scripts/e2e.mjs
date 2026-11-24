@@ -107,7 +107,10 @@ async function main() {
   // Regression guard: the edit forms were once rendered from a static field
   // list, so every record opened blank and saving it overwrote the row.
   console.log("\nadmin edit forms:");
-  const groupsAdmin = await (await fetch(`${BASE}/admin/business-groups`, { headers: { cookie } })).text();
+  const digitalGroup = await prisma.businessGroup.findUnique({ where: { slug: "digital" } });
+  const groupsAdmin = await (
+    await fetch(`${BASE}/admin/business-groups?edit=${digitalGroup?.id ?? ""}`, { headers: { cookie } })
+  ).text();
   check(
     "group edit form carries the record's slug",
     groupsAdmin.includes('name="slug"') && /value="digital"/.test(groupsAdmin),
@@ -118,22 +121,22 @@ async function main() {
   );
   const pagesAdmin = await (await fetch(`${BASE}/admin/pages`, { headers: { cookie } })).text();
   check(
-    "page editor lists every top-level route",
-    pagesAdmin.includes("/business-groups") && pagesAdmin.includes("صفحات اصلی"),
+    "page list shows system pages and the custom-page filter",
+    pagesAdmin.includes("/admin/pages/") && pagesAdmin.includes("صفحات اصلی و حقوقی"),
   );
   check(
-    "page editor ships the content toolbar",
-    pagesAdmin.includes("پیش‌نمایش") && pagesAdmin.includes("کتابخانه رسانه"),
+    "page list links the front-page editor",
+    pagesAdmin.includes("/admin/home") && pagesAdmin.includes("صفحه اصلی"),
   );
 
   // ---------- public pages ----------
   console.log("\npublic pages:");
   const home = await (await fetch(`${BASE}/`)).text();
   check(
-    "home renders the hero orb wrapper",
-    // The particle scene is WebGL and therefore client-only, so only the
-    // wrapper and its static fallback are expected in the server HTML.
-    home.includes('class="sphere"'),
+    "home renders the cover",
+    // The sphere scene is WebGL and client-only; the cover's static markup and
+    // its fallback are what the server HTML must carry.
+    home.includes('id="cover"'),
   );
   check(
     "home still renders the Labs WebGL fallback (client-only scene)",
@@ -191,7 +194,7 @@ async function main() {
   // ---------- branding upload (logo) ----------
   console.log("\nbranding upload:");
   const settingsHtml = await (
-    await fetch(`${BASE}/admin/settings`, { headers: { cookie } })
+    await fetch(`${BASE}/admin/settings?tab=branding`, { headers: { cookie } })
   ).text();
   check("settings exposes a branding uploader", settingsHtml.includes("لوگوی اصلی"));
   // Target the logo uploader specifically (value="logo", not "logo_light").
@@ -239,7 +242,9 @@ async function main() {
 
   // ---------- media upload is converted to WebP ----------
   console.log("\nmedia upload:");
-  const mediaPage = await (await fetch(`${BASE}/admin/media`, { headers: { cookie } })).text();
+  const mediaPage = await (
+    await fetch(`${BASE}/admin/media?new=1`, { headers: { cookie } })
+  ).text();
   const mediaFields = extractActionFields(mediaPage, /type="file"/);
   const mediaUp = await fetch(`${BASE}/admin/media`, {
     method: "POST",
@@ -268,7 +273,9 @@ async function main() {
 
   // ---------- header logo size is admin-adjustable ----------
   console.log("\nlogo size:");
-  const settingsPage = await (await fetch(`${BASE}/admin/settings`, { headers: { cookie } })).text();
+  const settingsPage = await (
+    await fetch(`${BASE}/admin/settings?tab=branding`, { headers: { cookie } })
+  ).text();
   const logoFields = extractActionFields(settingsPage, /name="logo_height"/);
   const logoUp = await fetch(`${BASE}/admin/settings`, {
     method: "POST",
@@ -294,7 +301,7 @@ async function main() {
   // could validate or explain — the branding uploader advertises 2 MB, so this
   // asserts a >1 MB upload actually reaches the action.
   const bigSettings = await (
-    await fetch(`${BASE}/admin/settings`, { headers: { cookie } })
+    await fetch(`${BASE}/admin/settings?tab=branding`, { headers: { cookie } })
   ).text();
   const bigFields = extractActionFields(bigSettings, /name="kind"(?![^>]*logo)[^>]*value="favicon"/);
   const bigFile = new File([new Uint8Array(1_400_000)], "big-favicon.svg", {

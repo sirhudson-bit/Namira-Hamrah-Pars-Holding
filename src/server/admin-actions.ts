@@ -14,9 +14,16 @@ import {
   requireAdmin,
   verifyPassword,
 } from "@/server/auth";
-import { FONT_SIZE_RANGE, LINE_HEIGHT_RANGE, ORB_ALIGNMENTS, ORB_RANGE } from "@/server/settings";
+import {
+  FONT_SIZE_RANGE,
+  LINE_HEIGHT_RANGE,
+  ORB_ALIGNMENTS,
+  ORB_RANGE,
+  settingsKeysForTab,
+} from "@/server/settings";
 import { toPersianDigits } from "@/lib/format";
 import { extractEmbedUrl } from "@/lib/embed";
+import { sanitizeFamily } from "@/server/fonts";
 import type { ActionResult } from "@/server/actions";
 import type { MediaItem } from "@/lib/media";
 import { imagePositionCss, isSafeImageSrc } from "@/lib/media";
@@ -653,7 +660,7 @@ export async function saveService(
     return fail("ذخیره نشد؛ ممکن است نشانی تکراری باشد.");
   }
   revalidatePath("/services");
-  revalidatePath("/admin/content");
+  revalidatePath("/admin/site-content");
   return { ok: true, message: "خدمت ذخیره شد." };
 }
 
@@ -661,7 +668,7 @@ export async function deleteService(formData: FormData): Promise<void> {
   await requireAdmin();
   await prisma.serviceItem.delete({ where: { id: str(formData, "id") } }).catch(() => {});
   revalidatePath("/services");
-  revalidatePath("/admin/content");
+  revalidatePath("/admin/site-content");
 }
 
 export async function saveOrgUnit(
@@ -688,7 +695,7 @@ export async function saveOrgUnit(
     return fail("ذخیره نشد؛ ممکن است نشانی تکراری باشد.");
   }
   revalidatePath("/units");
-  revalidatePath("/admin/content");
+  revalidatePath("/admin/site-content");
   return { ok: true, message: "واحد سازمانی ذخیره شد." };
 }
 
@@ -696,7 +703,7 @@ export async function deleteOrgUnit(formData: FormData): Promise<void> {
   await requireAdmin();
   await prisma.orgUnit.delete({ where: { id: str(formData, "id") } }).catch(() => {});
   revalidatePath("/units");
-  revalidatePath("/admin/content");
+  revalidatePath("/admin/site-content");
 }
 
 export async function saveInnovation(
@@ -723,7 +730,7 @@ export async function saveInnovation(
     return fail("ذخیره نشد؛ ممکن است نشانی تکراری باشد.");
   }
   revalidatePath("/innovation");
-  revalidatePath("/admin/content");
+  revalidatePath("/admin/site-content");
   return { ok: true, message: "پروژه نوآوری ذخیره شد." };
 }
 
@@ -731,7 +738,7 @@ export async function deleteInnovation(formData: FormData): Promise<void> {
   await requireAdmin();
   await prisma.innovationProject.delete({ where: { id: str(formData, "id") } }).catch(() => {});
   revalidatePath("/innovation");
-  revalidatePath("/admin/content");
+  revalidatePath("/admin/site-content");
 }
 
 export async function saveTeamMember(
@@ -753,7 +760,7 @@ export async function saveTeamMember(
   if (id) await prisma.teamMember.update({ where: { id }, data });
   else await prisma.teamMember.create({ data });
   revalidatePath("/about");
-  revalidatePath("/admin/content");
+  revalidatePath("/admin/site-content");
   return { ok: true, message: "عضو تیم ذخیره شد." };
 }
 
@@ -761,7 +768,7 @@ export async function deleteTeamMember(formData: FormData): Promise<void> {
   await requireAdmin();
   await prisma.teamMember.delete({ where: { id: str(formData, "id") } }).catch(() => {});
   revalidatePath("/about");
-  revalidatePath("/admin/content");
+  revalidatePath("/admin/site-content");
 }
 
 export async function saveMilestone(
@@ -782,7 +789,7 @@ export async function saveMilestone(
   if (id) await prisma.milestone.update({ where: { id }, data });
   else await prisma.milestone.create({ data });
   revalidatePath("/about");
-  revalidatePath("/admin/content");
+  revalidatePath("/admin/site-content");
   return { ok: true, message: "نقطه عطف ذخیره شد." };
 }
 
@@ -790,7 +797,7 @@ export async function deleteMilestone(formData: FormData): Promise<void> {
   await requireAdmin();
   await prisma.milestone.delete({ where: { id: str(formData, "id") } }).catch(() => {});
   revalidatePath("/about");
-  revalidatePath("/admin/content");
+  revalidatePath("/admin/site-content");
 }
 
 /* ----------------------------- settings ---------------------------- */
@@ -818,6 +825,8 @@ const EDITABLE_SETTING_KEYS = [
   "line_height",
   "maintenance_mode",
   "maintenance_message",
+  "font_family",
+  "heading_font_family",
 ];
 
 /** Keys posted by a checkbox ("on"/"") rather than a text field. */
@@ -840,7 +849,17 @@ export async function saveSettings(
 ): Promise<ActionResult> {
   await requireAdmin();
 
-  for (const key of EDITABLE_SETTING_KEYS) {
+  /**
+   * Each settings tab is its own form. Without this filter a save on «سئو»
+   * would write empty strings over every key owned by the other tabs, because
+   * a field that is not in the submitted FormData reads as "".
+   */
+  const tabKeys = settingsKeysForTab(str(formData, "_tab"));
+  const writable = tabKeys
+    ? EDITABLE_SETTING_KEYS.filter((key) => tabKeys.includes(key))
+    : EDITABLE_SETTING_KEYS;
+
+  for (const key of writable) {
     if (CHECKBOX_SETTING_KEYS.has(key)) continue;
 
     let value = str(formData, key);
@@ -852,6 +871,12 @@ export async function saveSettings(
     // Google Maps / video snippets are reduced to the bare `src` so a pasted
     // `<iframe …>` can never be requested as a relative path (the 404 map).
     if (EMBED_KEYS.has(key)) value = extractEmbedUrl(value);
+
+    // Font families are written into a `<style>` block, so the value is
+    // restricted to characters a family name can legally contain.
+    if (key === "font_family" || key === "heading_font_family") {
+      value = sanitizeFamily(value);
+    }
 
     if (key === "font_size") {
       value = String(clampNumber(value, FONT_SIZE_RANGE.min, FONT_SIZE_RANGE.max, FONT_SIZE_RANGE.fallback));
@@ -868,7 +893,8 @@ export async function saveSettings(
   }
 
   // Checkboxes post "on"/"" — normalize to an explicit boolean string.
-  for (const key of CHECKBOX_SETTING_KEYS) {
+  for (const key of writable) {
+    if (!CHECKBOX_SETTING_KEYS.has(key)) continue;
     const value = bool(formData, key) ? "true" : "false";
     await prisma.setting.upsert({
       where: { key },
@@ -963,6 +989,8 @@ const HERO_TEXT_KEYS = [
   "hero_cta_href",
   "hero_video_label",
   "hero_stats",
+  "hero_image",
+  "hero_image_alt",
 ] as const;
 
 export async function saveHero(
@@ -1170,6 +1198,85 @@ export async function deleteMedia(formData: FormData): Promise<void> {
   }
   revalidatePath("/admin/media");
   revalidatePath("/media");
+}
+
+/* -------------------------------- fonts ---------------------------- */
+
+const MAX_FONT_BYTES = 4 * 1024 * 1024;
+const FONT_EXTENSIONS = new Set(["woff2", "woff", "ttf", "otf"]);
+
+/**
+ * Cheap signature check. The extension is the administrator's claim; these
+ * bytes are the file's. A mislabelled upload would otherwise be written to disk
+ * and referenced from a `@font-face` rule that silently never renders.
+ */
+function looksLikeFont(buffer: Buffer, ext: string): boolean {
+  const head = buffer.subarray(0, 4).toString("latin1");
+  if (ext === "woff2") return head === "wOF2";
+  if (ext === "woff") return head === "wOFF";
+  if (ext === "otf") return head === "OTTO";
+  // TrueType: either 0x00010000 or the legacy "true" tag.
+  return (buffer[0] === 0 && buffer[1] === 1 && buffer[2] === 0 && buffer[3] === 0) || head === "true";
+}
+
+export async function uploadFont(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return fail("فایلی انتخاب نشده است.");
+  if (file.size > MAX_FONT_BYTES) return fail("حجم فایل فونت باید کمتر از ۴ مگابایت باشد.");
+
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (!FONT_EXTENSIONS.has(ext)) {
+    return fail("فقط فایل‌های woff2، woff، ttf و otf پذیرفته می‌شوند.");
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  if (!looksLikeFont(buffer, ext)) return fail("فایل انتخاب‌شده یک فونت معتبر نیست.");
+
+  const family = sanitizeFamily(str(formData, "family"));
+  if (!family) return fail("نام خانواده فونت را وارد کنید.");
+
+  const rawWeight = str(formData, "weight");
+  const weight = /^(normal|bold|[1-9]00)$/.test(rawWeight) ? rawWeight : "400";
+  const style = str(formData, "style") === "italic" ? "italic" : "normal";
+
+  const filename = `${randomUUID()}.${ext}`;
+  const dir = path.join(process.cwd(), "public", "uploads", "fonts");
+  await mkdir(dir, { recursive: true });
+  await writeFile(path.join(dir, filename), buffer);
+
+  await prisma.fontAsset.create({
+    data: {
+      family,
+      weight,
+      style,
+      filename: file.name.slice(0, 200),
+      path: `/uploads/fonts/${filename}`,
+      mime: ext === "woff2" ? "font/woff2" : ext === "woff" ? "font/woff" : ext === "otf" ? "font/otf" : "font/ttf",
+      size: buffer.length,
+    },
+  });
+
+  revalidatePath("/admin/settings");
+  revalidatePath("/", "layout");
+  return { ok: true, message: `فونت «${family}» بارگذاری شد.` };
+}
+
+export async function deleteFont(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = str(formData, "id");
+  const font = await prisma.fontAsset.findUnique({ where: { id } });
+  if (font) {
+    const rel = font.path.replace(/^\//, "");
+    await unlink(path.join(process.cwd(), "public", rel)).catch(() => {});
+    await prisma.fontAsset.delete({ where: { id } });
+  }
+  revalidatePath("/admin/settings");
+  revalidatePath("/", "layout");
 }
 
 /** Latest media assets, for the editor's image picker. */

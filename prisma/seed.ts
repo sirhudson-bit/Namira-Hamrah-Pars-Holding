@@ -71,6 +71,8 @@ const businessGroups = [
       "محور اصلی فعالیت نامیرا؛ تأمین، توزیع و خرده‌فروشی گوشی همراه، تبلت و لوازم جانبی دیجیتال از برندهای معتبر جهانی.",
     icon: "Smartphone",
     color: "#0F7C71",
+    image: "/images/topics/digital.webp",
+    imageAlt: "گوشی هوشمند و تجهیزات دیجیتال",
     highlights:
       "تأمین مستقیم از نمایندگی‌های رسمی\nفروش آنلاین به مصرف‌کننده و فروش عمده\nخدمات گارانتی و تعمیرات تخصصی\nتنوع گسترده کالا در ۱۲ دسته‌بندی",
     sortOrder: 1,
@@ -83,6 +85,8 @@ const businessGroups = [
       "تأمین و توزیع قطعات یدکی، لوازم جانبی و تجهیزات خودرو با تمرکز بر اصالت کالا و شبکه توزیع سراسری.",
     icon: "Car",
     color: "#17998B",
+    image: "/images/topics/automotive.webp",
+    imageAlt: "خودرو در نمایشگاه",
     highlights:
       "قطعات اصلی و با گارانتی\nشبکه توزیع استانی\nپشتیبانی فنی برای نمایندگان\nکنترل کیفیت پیش از عرضه",
     sortOrder: 2,
@@ -95,6 +99,8 @@ const businessGroups = [
       "تأمین و توزیع محصولات غذایی بادوام و آشامیدنی، با رعایت زنجیره سرد و استانداردهای بهداشتی.",
     icon: "UtensilsCrossed",
     color: "#26B5A6",
+    image: "/images/topics/grocery.webp",
+    imageAlt: "محصولات تازه غذایی",
     highlights:
       "زنجیره تأمین سرد و انبار استاندارد\nرعایت استانداردهای بهداشتی\nتوزیع در فروشگاه‌های زنجیره‌ای\nبسته‌بندی و برندسازی اختصاصی",
     sortOrder: 3,
@@ -107,6 +113,8 @@ const businessGroups = [
       "تأمین ابزار، تجهیزات و مواد مصرفی صنعتی برای واحدهای تولیدی و پیمانکاران، با تمرکز بر تأمین پایدار.",
     icon: "Factory",
     color: "#6FD8CB",
+    image: "/images/topics/industrial.webp",
+    imageAlt: "خط تولید و تجهیزات صنعتی",
     highlights:
       "تأمین پایدار برای خطوط تولید\nقراردادهای بلندمدت تأمین\nمشاوره فنی و انتخاب تجهیزات\nانبارش قطعات پرمصرف",
     sortOrder: 4,
@@ -119,6 +127,8 @@ const businessGroups = [
       "بازوی بازرگانی هلدینگ برای واردات کالا، مذاکره با تأمین‌کنندگان خارجی و مدیریت فرآیندهای گمرکی و لجستیک.",
     icon: "Truck",
     color: "#0B5F57",
+    image: "/images/topics/logistics.webp",
+    imageAlt: "انبار و لجستیک بازرگانی",
     highlights:
       "مذاکره و قرارداد با تأمین‌کنندگان خارجی\nمدیریت اسناد و تشریفات گمرکی\nلجستیک بین‌الملل و انبارش\nکنترل ریسک و اعتبارسنجی تأمین‌کننده",
     sortOrder: 5,
@@ -134,6 +144,7 @@ const stores = [
       "فروشگاه آنلاین مصرف‌کننده برای خرید گوشی، تبلت و لوازم جانبی با ضمانت اصالت کالا و ارسال سریع.",
     url: "https://gooshiplaza.com",
     email: "support@gooshiplaza.com",
+    image: "/images/topics/retail.webp",
     sortOrder: 1,
   },
   {
@@ -144,6 +155,7 @@ const stores = [
       "پلتفرم فروش عمده و تأمین برای فروشندگان، کسب‌وکارها و همکاران تجاری با شرایط ویژه خرید عمده.",
     url: "https://hamrahplaza.com",
     email: "support@hamrahplaza.com",
+    image: "/images/topics/warehouse.webp",
     sortOrder: 2,
   },
   {
@@ -154,6 +166,7 @@ const stores = [
       "تجربه خرید حضوری با امکان مشاهده و آزمایش کالا، مشاوره تخصصی و تحویل فوری.",
     address: "تهران، خیابان ولیعصر، پاساژ نامیرا، طبقه همکف",
     phone: "۰۲۱-۹۱۰۰۸۸۰۱",
+    image: "/images/topics/store.webp",
     sortOrder: 3,
   },
   {
@@ -164,6 +177,7 @@ const stores = [
       "تأمین تجهیزات و کالا برای سازمان‌ها، شرکت‌ها و نهادها با صدور فاکتور رسمی و قراردادهای خدماتی.",
     email: "corporate@namiragroup.ir",
     phone: "۰۲۱-۹۱۰۰۸۸۰۲",
+    image: "/images/topics/corporate.webp",
     sortOrder: 4,
   },
 ];
@@ -220,6 +234,7 @@ const news = [
     excerpt:
       "واحد نوآوری و هوش مصنوعی هلدینگ با هدف بهینه‌سازی زنجیره تأمین و تجربه مشتری آغاز به کار کرد.",
     category: "هلدینگ",
+    image: "/images/topics/ai.webp",
     body:
       "## آغاز مسیر نوآوری\n\nواحد «نامیرا لبز» به‌عنوان بازوی فناورانه هلدینگ افتتاح شد. تمرکز این واحد بر تحلیل داده‌های فروش، پیش‌بینی تقاضا و ساخت ابزارهای کمکی برای تیم پشتیبانی است.\n\n- تحلیل داده فروش و پیش‌بینی تقاضا\n- دستیار پاسخ‌گویی به مشتریان\n- بهینه‌سازی موجودی و انبارش\n\nدر فاز نخست، خروجی این واحد در دو گروه دیجیتال و خودرو به‌صورت آزمایشی به کار گرفته می‌شود.",
     published: true,
@@ -231,6 +246,7 @@ const news = [
     excerpt:
       "با توسعه کانال‌های فروش آنلاین، سهم فروش اینترنتی گروه دیجیتال در نیمه نخست سال افزایش یافت.",
     category: "فروش",
+    image: "/images/topics/digital.webp",
     body:
       "## فروش آنلاین در مسیر رشد\n\nراهبرد هلدینگ بر تقویت کانال‌های فروش آنلاین متمرکز شده است. در این دوره، تجربه کاربری سایت فروشگاه، سرعت ارسال و پوشش خدمات پس از فروش بهبود یافت.\n\n- بهبود فرآیند ثبت سفارش\n- گسترش پوشش ارسال\n- تقویت پاسخ‌گویی پشتیبانی",
     published: true,
@@ -242,6 +258,7 @@ const news = [
     excerpt:
       "واحد فروش سازمانی نامیرا، تأمین تجهیزات دیجیتال تعدادی از شرکت‌های همکار را بر عهده گرفت.",
     category: "همکاری",
+    image: "/images/topics/corporate.webp",
     body:
       "## تأمین سازمانی\n\nواحد فروش سازمانی ضمن عقد قرارداد با چند مجموعه، تأمین تجهیزات و کالاهای مصرفی آن‌ها را بر عهده گرفت. این همکاری شامل تأمین مستمر، فاکتور رسمی و پشتیبانی اختصاصی است.",
     published: true,
@@ -256,6 +273,7 @@ const blogPosts = [
     excerpt:
       "چند نشانه ساده که پیش از خرید گوشی همراه، به شما کمک می‌کند اصالت کالا را بررسی کنید.",
     category: "راهنمای خرید",
+    image: "/images/topics/retail.webp",
     author: "تیم محتوای نامیرا",
     body:
       "## بررسی اصالت کالا\n\nپیش از خرید، این موارد را بررسی کنید:\n\n1. جعبه و لوازم همراه اصیل\n2. کد رهگیری گارانتی\n3. تطابق سریال دستگاه با جعبه\n4. فاکتور رسمی فروشنده\n\nخرید از فروشگاه‌های دارای ضمانت اصالت، ریسک خرید کالای غیراصل را به‌شدت کاهش می‌دهد.",
@@ -268,6 +286,7 @@ const blogPosts = [
     excerpt:
       "اگر فروشنده یا کسب‌وکار هستید، این نکات به شما کمک می‌کند خرید عمده بهینه‌تری داشته باشید.",
     category: "کسب‌وکار",
+    image: "/images/topics/warehouse.webp",
     author: "واحد بازرگانی",
     body:
       "## خرید عمده هوشمند\n\n- برنامه‌ریزی بر پایه تقاضای فصلی\n- توجه به حداقل سفارش و شرایط اعتباری\n- بررسی زمان تأمین و موجودی\n- انتخاب تأمین‌کننده با پشتیبانی پس از فروش",
@@ -280,6 +299,7 @@ const blogPosts = [
     excerpt:
       "نگاهی به نقش داده در پیش‌بینی تقاضا و کاهش هزینه‌های انبارش در کسب‌وکارهای توزیعی.",
     category: "تحلیل",
+    image: "/images/topics/ai.webp",
     author: "نامیرا لبز",
     body:
       "## داده در زنجیره تأمین\n\nداده‌های فروش، الگوی تقاضا را آشکار می‌کنند. با تحلیل این داده‌ها می‌توان موجودی را بهینه کرد، از مازاد انبار کاست و زمان تأمین را کوتاه‌تر کرد.\n\n> تصمیم درست، تصمیمی است که بر داده واقعی استوار باشد.",
@@ -365,6 +385,23 @@ const milestones = [
  * page's built-in fallback, so a fresh install looks identical — the difference
  * is that all of it can now be changed from /admin/pages.
  */
+/**
+ * Topic photography shipped with the repo (public/images/topics). Keeping the
+ * mapping here means a fresh install is illustrated instead of rendering
+ * icon-only cards and empty article headers.
+ */
+const PAGE_HERO_IMAGES: Record<string, string> = {
+  about: "/images/topics/team.webp",
+  "business-groups": "/images/topics/hq.webp",
+  stores: "/images/topics/retail.webp",
+  innovation: "/images/topics/ai.webp",
+  services: "/images/topics/support.webp",
+  units: "/images/topics/industrial.webp",
+  media: "/images/topics/corporate.webp",
+  careers: "/images/topics/team.webp",
+  contact: "/images/topics/hq.webp",
+};
+
 const sitePages = [
   {
     slug: "about",
@@ -659,8 +696,13 @@ async function main() {
   for (const p of sitePages) {
     await prisma.page.upsert({
       where: { slug: p.slug },
-      update: { title: p.title, eyebrow: p.eyebrow, subtitle: p.subtitle },
-      create: { ...p, body: "", published: true },
+      update: {
+        title: p.title,
+        eyebrow: p.eyebrow,
+        subtitle: p.subtitle,
+        ...(PAGE_HERO_IMAGES[p.slug] ? { image: PAGE_HERO_IMAGES[p.slug] } : {}),
+      },
+      create: { ...p, image: PAGE_HERO_IMAGES[p.slug] ?? "", body: "", published: true },
     });
   }
 

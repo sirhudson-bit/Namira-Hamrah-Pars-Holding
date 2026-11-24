@@ -1,328 +1,313 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import {
   ArrowLeft,
   Boxes,
   Briefcase,
+  CheckCircle2,
+  FileText,
   Image as ImageIcon,
   Inbox,
   Mail,
-  Newspaper,
-  PenLine,
   Plus,
-  Settings,
   Store,
-  Users,
 } from "lucide-react";
 import { prisma } from "@/server/db";
 import { getSettings } from "@/server/settings";
 import { formatJalaliLong, toPersianDigits } from "@/lib/format";
+import { ScreenHeader } from "@/components/admin/wp/screen";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "پیشخوان" };
 
-/** A dashboard modelled on the WordPress "At a glance" / "Activity" layout. */
+/** A dashboard modelled on WordPress: welcome panel, at-a-glance, activity. */
 export default async function AdminDashboardPage() {
   const [
     groups,
     stores,
-    news,
-    posts,
+    newsCount,
+    postsCount,
     jobs,
-    services,
-    units,
-    media,
-    pages,
+    pagesCount,
+    mediaCount,
     unreadMessages,
     newApplications,
     subscribers,
-    totalMessages,
+    messagesCount,
   ] = await Promise.all([
     prisma.businessGroup.count(),
     prisma.store.count(),
     prisma.newsPost.count(),
     prisma.blogPost.count(),
     prisma.jobOpening.count({ where: { active: true } }),
-    prisma.serviceItem.count(),
-    prisma.orgUnit.count(),
-    prisma.mediaAsset.count(),
     prisma.page.count(),
+    prisma.mediaAsset.count(),
     prisma.contactMessage.count({ where: { read: false } }),
     prisma.jobApplication.count({ where: { status: "new" } }),
     prisma.newsletterSubscriber.count({ where: { active: true } }),
     prisma.contactMessage.count(),
   ]);
 
-  const [recentMessages, recentApplications, settings, recentNews, recentPosts, recentPages] =
+  const [recentMessages, settings, recentNews, recentPages, recentMedia] =
     await Promise.all([
-      prisma.contactMessage.findMany({ orderBy: { createdAt: "desc" }, take: 5 }),
-      prisma.jobApplication.findMany({ orderBy: { createdAt: "desc" }, take: 4 }),
+      prisma.contactMessage.findMany({ orderBy: { createdAt: "desc" }, take: 4 }),
       getSettings(),
-      prisma.newsPost.findMany({ orderBy: { updatedAt: "desc" }, take: 3 }),
-      prisma.blogPost.findMany({ orderBy: { updatedAt: "desc" }, take: 3 }),
-      prisma.page.findMany({ orderBy: { updatedAt: "desc" }, take: 4 }),
+      prisma.newsPost.findMany({ orderBy: { updatedAt: "desc" }, take: 4 }),
+      prisma.page.findMany({ orderBy: { updatedAt: "desc" }, take: 3 }),
+      prisma.mediaAsset.findMany({ orderBy: { createdAt: "desc" }, take: 4 }),
     ]);
 
-  const stats = [
-    { label: "گروه‌های کسب‌وکار", value: groups, href: "/admin/business-groups", Icon: Boxes },
-    { label: "فروشگاه‌ها", value: stores, href: "/admin/stores", Icon: Store },
-    { label: "اخبار", value: news, href: "/admin/news", Icon: Newspaper },
-    { label: "مقالات", value: posts, href: "/admin/blog", Icon: PenLine },
-    { label: "موقعیت‌های شغلی باز", value: jobs, href: "/admin/careers", Icon: Briefcase },
-    { label: "واحدهای سازمانی", value: units, href: "/admin/settings", Icon: Users },
-    { label: "خدمات", value: services, href: "/admin/pages", Icon: Settings },
-    { label: "نگاره‌های رسانه", value: media, href: "/admin/media", Icon: ImageIcon },
-    { label: "صفحات قابل ویرایش", value: pages, href: "/admin/pages", Icon: FileIcon },
-  ];
-
-  const quickActions = [
-    { label: "خبر جدید", href: "/admin/news" },
-    { label: "مقاله جدید", href: "/admin/blog" },
-    { label: "گروه جدید", href: "/admin/business-groups" },
-    { label: "فروشگاه جدید", href: "/admin/stores" },
-    { label: "موقعیت شغلی", href: "/admin/careers" },
-    { label: "بارگذاری رسانه", href: "/admin/media" },
-  ];
-
   const activity = [
-    ...recentNews.map((n) => ({
-      id: `n-${n.id}`,
-      title: n.title,
+    ...recentNews.map((item) => ({
+      id: `news-${item.id}`,
+      title: item.title,
       kind: "خبر",
-      href: "/admin/news",
-      updatedAt: n.updatedAt,
+      href: `/admin/news?edit=${item.id}`,
+      updatedAt: item.updatedAt,
     })),
-    ...recentPosts.map((p) => ({
-      id: `b-${p.id}`,
-      title: p.title,
-      kind: "مقاله",
-      href: "/admin/blog",
-      updatedAt: p.updatedAt,
-    })),
-    ...recentPages.map((p) => ({
-      id: `p-${p.id}`,
-      title: p.title,
-      kind: "صفحه",
-      href: "/admin/pages",
-      updatedAt: p.updatedAt,
+    ...recentPages.map((item) => ({
+      id: `page-${item.id}`,
+      title: item.title,
+      kind: "برگه",
+      href: `/admin/pages/${item.id}`,
+      updatedAt: item.updatedAt,
     })),
   ]
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-    .slice(0, 8);
+    .slice(0, 6);
+
+  const glance = [
+    { label: "خبر", count: newsCount, href: "/admin/news", Icon: FileText },
+    { label: "مقاله", count: postsCount, href: "/admin/blog", Icon: FileText },
+    { label: "برگه", count: pagesCount, href: "/admin/pages", Icon: FileText },
+    { label: "رسانه", count: mediaCount, href: "/admin/media", Icon: ImageIcon },
+    { label: "گروه کسب‌وکار", count: groups, href: "/admin/business-groups", Icon: Boxes },
+    { label: "فروشگاه", count: stores, href: "/admin/stores", Icon: Store },
+    { label: "موقعیت شغلی باز", count: jobs, href: "/admin/careers", Icon: Briefcase },
+    { label: "عضو خبرنامه", count: subscribers, href: "/admin/forms?tab=subscribers", Icon: Mail },
+  ];
 
   const health = [
-    {
-      label: "لوگو و فاوآیکون",
-      ok: Boolean(settings.logo_path && settings.favicon_path),
-      href: "/admin/settings",
-    },
-    {
-      label: "عنوان و توضیح سئو",
-      ok: Boolean(settings.seo_title && settings.seo_description),
-      href: "/admin/settings",
-    },
-    {
-      label: "ویدئوی معرفی",
-      ok: Boolean(settings.video_embed),
-      href: "/admin/settings",
-    },
-    {
-      label: "اطلاعات تماس",
-      ok: Boolean(settings.phone && settings.email && settings.address),
-      href: "/admin/settings",
-    },
+    { label: "لوگو و فاوآیکون", ok: Boolean(settings.logo_path && settings.favicon_path) },
+    { label: "عنوان و توضیح سئو", ok: Boolean(settings.seo_title && settings.seo_description) },
+    { label: "اطلاعات تماس", ok: Boolean(settings.phone && settings.email && settings.address) },
+    { label: "تصویر هیروی صفحه اصلی", ok: Boolean(settings.hero_image) },
+    { label: "ویدئوی معرفی", ok: Boolean(settings.video_embed) },
   ];
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="heading-2">داشبورد</h1>
-          <p className="mt-2 text-sm text-ink-500">
-            نمای کلی محتوا، ورودی‌ها و وضعیت سایت.
-          </p>
-        </div>
-        <Link href="/" target="_blank" className="btn-secondary">
-          مشاهده سایت
-          <ArrowLeft className="h-4 w-4" aria-hidden />
-        </Link>
-      </div>
+    <div>
+      <ScreenHeader
+        title="پیشخوان"
+        description="نمای کلی سایت، محتوای اخیر و کارهای در انتظار."
+        action={
+          <Link href="/" target="_blank" className="btn-secondary">
+            مشاهده سایت
+            <ArrowLeft className="h-4 w-4" aria-hidden />
+          </Link>
+        }
+      />
 
-      {/* Quick actions — the WordPress "add new" shortcuts. */}
-      <section className="card p-6">
-        <h2 className="mb-4 text-sm font-bold text-ink-900">دسترسی سریع</h2>
-        <div className="flex flex-wrap gap-2">
-          {quickActions.map((a) => (
-            <Link key={a.href + a.label} href={a.href} className="btn-secondary">
-              <Plus className="h-4 w-4" aria-hidden />
-              {a.label}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* At a glance */}
-      <section>
-        <h2 className="mb-4 text-sm font-bold text-ink-900">یک نگاه به سایت</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {stats.map((s) => (
-            <Link
-              key={s.label}
-              href={s.href}
-              className="card flex items-center gap-4 p-5 transition-colors hover:border-brand-500/40"
-            >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-700/20 text-accent">
-                <s.Icon className="h-5 w-5" aria-hidden />
-              </span>
-              <div className="min-w-0">
-                <p className="text-2xl font-extrabold text-ink-900">{toPersianDigits(s.value)}</p>
-                <p className="truncate text-xs text-ink-500">{s.label}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Activity */}
-        <section className="card p-6">
-          <h2 className="mb-4 text-sm font-bold text-ink-900">آخرین تغییرات محتوا</h2>
-          {activity.length === 0 ? (
-            <p className="text-sm text-ink-500">هنوز محتوایی ثبت نشده است.</p>
-          ) : (
-            <ul className="divide-y divide-line-200">
-              {activity.map((a) => (
-                <li key={a.id} className="flex items-center justify-between gap-3 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-ink-900">{a.title}</p>
-                    <p className="text-[11px] text-ink-500">{a.kind}</p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    <time className="text-[11px] text-ink-500">
-                      {formatJalaliLong(a.updatedAt)}
-                    </time>
-                    <Link href={a.href} className="text-[11px] font-medium text-accent">
-                      ویرایش
-                    </Link>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+        {/* Welcome panel */}
+        <section className="card overflow-hidden">
+          <div className="border-b border-line-200 px-5 py-4">
+            <h2 className="text-[15px] font-bold text-ink-900">خوش آمدید</h2>
+            <p className="mt-1 text-[12.5px] leading-6 text-ink-500">
+              این پیشخوان، همان ساختار وردپرس را دارد: هر بخش از منوی کنار صفحه باز می‌شود،
+              فهرست‌ها جدول قابل‌جستجو دارند و ویرایش هر مورد در یک صفحه‌ی مستقل انجام می‌شود.
+            </p>
+          </div>
+          <div className="grid gap-0 sm:grid-cols-3">
+            {[
+              { label: "افزودن خبر", href: "/admin/news?new=1", Icon: FileText },
+              { label: "بارگذاری رسانه", href: "/admin/media?new=1", Icon: ImageIcon },
+              { label: "برگه جدید", href: "/admin/pages?new=1", Icon: Plus },
+            ].map((action) => (
+              <Link
+                key={action.href}
+                href={action.href}
+                className="group flex items-center gap-3 border-b border-line-200 px-5 py-4 transition-colors hover:bg-surface-100 sm:border-b-0 sm:border-s sm:first:border-s-0"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-line-200 bg-surface-100 text-accent transition-colors group-hover:border-accent/40">
+                  <action.Icon className="h-4 w-4" aria-hidden />
+                </span>
+                <span className="text-[12.5px] font-medium text-ink-900">{action.label}</span>
+              </Link>
+            ))}
+          </div>
         </section>
 
-        {/* Health */}
-        <section className="card p-6">
-          <h2 className="mb-4 text-sm font-bold text-ink-900">وضعیت سایت</h2>
-          <ul className="divide-y divide-line-200">
-            {health.map((h) => (
-              <li key={h.label} className="flex items-center justify-between gap-3 py-3">
-                <span className="flex items-center gap-2 text-sm text-ink-900">
-                  <span
-                    className={
-                      h.ok
-                        ? "inline-block h-2 w-2 rounded-full bg-brand-600"
-                        : "inline-block h-2 w-2 rounded-full bg-amber-500"
-                    }
-                    aria-hidden
-                  />
-                  {h.label}
-                </span>
-                <span className="flex items-center gap-3">
-                  <span className="text-[11px] text-ink-500">
-                    {h.ok ? "تنظیم شده" : "ناقص"}
+        {/* At a glance */}
+        <section className="card">
+          <h2 className="border-b border-line-200 px-5 py-3 text-[14px] font-bold text-ink-900">
+            در یک نگاه
+          </h2>
+          <ul className="grid grid-cols-2 gap-px bg-line-200/60">
+            {glance.map((item) => (
+              <li key={item.label} className="bg-surface">
+                <Link
+                  href={item.href}
+                  className="flex items-center gap-2.5 px-4 py-3 transition-colors hover:bg-surface-100"
+                >
+                  <item.Icon className="h-4 w-4 shrink-0 text-ink-400" aria-hidden />
+                  <span className="min-w-0">
+                    <span className="block text-[16px] font-semibold leading-tight text-ink-900">
+                      {toPersianDigits(item.count)}
+                    </span>
+                    <span className="block truncate text-[11px] text-ink-500">{item.label}</span>
                   </span>
-                  <Link href={h.href} className="text-[11px] font-medium text-accent">
-                    تنظیمات
-                  </Link>
-                </span>
+                </Link>
               </li>
             ))}
           </ul>
         </section>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="card p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-ink-900">
-              پیام‌های تماس
-              {unreadMessages > 0 ? (
-                <span className="mr-2 rounded-full bg-brand-700 px-2 py-0.5 text-[11px] text-white">
-                  {toPersianDigits(unreadMessages)} خوانده‌نشده
-                </span>
-              ) : null}
-            </h2>
-            <Link href="/admin/forms" className="text-xs font-medium text-accent">
-              همه ({toPersianDigits(totalMessages)})
-            </Link>
-          </div>
-          {recentMessages.length === 0 ? (
-            <p className="text-sm text-ink-500">پیامی دریافت نشده است.</p>
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <section className="card">
+          <h2 className="border-b border-line-200 px-5 py-3 text-[14px] font-bold text-ink-900">
+            فعالیت اخیر
+          </h2>
+          {activity.length === 0 ? (
+            <p className="px-5 py-8 text-center text-[12.5px] text-ink-500">هنوز محتوایی ثبت نشده است.</p>
           ) : (
             <ul className="divide-y divide-line-200">
-              {recentMessages.map((m) => (
-                <li key={m.id} className="flex items-start justify-between gap-3 py-3">
+              {activity.map((item) => (
+                <li key={item.id} className="flex items-center justify-between gap-3 px-5 py-2.5">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-ink-900">{m.name}</p>
-                    <p className="truncate text-xs text-ink-500">{m.message}</p>
+                    <Link
+                      href={item.href}
+                      className="block truncate text-[12.5px] font-medium text-accent hover:underline"
+                    >
+                      {item.title}
+                    </Link>
+                    <span className="text-[10.5px] text-ink-500">
+                      {item.kind} · {formatJalaliLong(item.updatedAt)}
+                    </span>
                   </div>
-                  <time className="shrink-0 text-[11px] text-ink-500">
-                    {formatJalaliLong(m.createdAt)}
-                  </time>
+                  <Link href={item.href} className="shrink-0 text-[11px] text-accent">
+                    ویرایش
+                  </Link>
                 </li>
               ))}
             </ul>
           )}
         </section>
 
-        <section className="card p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-ink-900">
-              درخواست‌های همکاری
-              {newApplications > 0 ? (
-                <span className="mr-2 rounded-full bg-brand-700 px-2 py-0.5 text-[11px] text-white">
-                  {toPersianDigits(newApplications)} جدید
+        <section className="card">
+          <h2 className="flex items-center justify-between border-b border-line-200 px-5 py-3 text-[14px] font-bold text-ink-900">
+            در انتظار بررسی
+            <span className="text-[11px] font-normal text-ink-500">
+              {toPersianDigits(unreadMessages + newApplications)} مورد
+            </span>
+          </h2>
+          <ul className="divide-y divide-line-200">
+            <li>
+              <Link
+                href="/admin/forms?tab=messages"
+                className="flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-surface-100"
+              >
+                <span className="inline-flex items-center gap-2 text-[12.5px] text-ink-900">
+                  <Inbox className="h-4 w-4 text-ink-400" aria-hidden />
+                  پیام‌های تماس
+                  {unreadMessages > 0 ? (
+                    <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                      {toPersianDigits(unreadMessages)}
+                    </span>
+                  ) : null}
                 </span>
-              ) : null}
-            </h2>
-            <Link href="/admin/forms" className="inline-flex items-center gap-1 text-xs font-medium text-accent">
-              مشاهده
-              <ArrowLeft className="h-3 w-3" aria-hidden />
+                <span className="text-[11px] text-ink-500">{toPersianDigits(messagesCount)} کل</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/admin/forms?tab=applications"
+                className="flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-surface-100"
+              >
+                <span className="inline-flex items-center gap-2 text-[12.5px] text-ink-900">
+                  <Briefcase className="h-4 w-4 text-ink-400" aria-hidden />
+                  درخواست‌های شغلی
+                  {newApplications > 0 ? (
+                    <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                      {toPersianDigits(newApplications)}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="text-[11px] text-ink-500">جدید</span>
+              </Link>
+            </li>
+          </ul>
+
+          {recentMessages.length ? (
+            <div className="border-t border-line-200 px-5 py-3">
+              <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-wide text-ink-400">
+                آخرین پیام‌ها
+              </p>
+              <ul className="space-y-1.5">
+                {recentMessages.map((message) => (
+                  <li key={message.id} className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-[11.5px] text-ink-700">{message.name}</span>
+                    <span className="shrink-0 text-[10px] text-ink-400">
+                      {formatJalaliLong(message.createdAt)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+      </div>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <section className="card">
+          <h2 className="border-b border-line-200 px-5 py-3 text-[14px] font-bold text-ink-900">
+            وضعیت سایت
+          </h2>
+          <ul className="divide-y divide-line-200">
+            {health.map((item) => (
+              <li key={item.label} className="flex items-center justify-between gap-3 px-5 py-2.5">
+                <span className="inline-flex items-center gap-2 text-[12.5px] text-ink-900">
+                  <CheckCircle2
+                    className={`h-4 w-4 ${item.ok ? "text-brand-500" : "text-amber-400"}`}
+                    aria-hidden
+                  />
+                  {item.label}
+                </span>
+                <Link href="/admin/settings" className="text-[11px] text-accent">
+                  {item.ok ? "تنظیم شده" : "تکمیل کنید"}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="card">
+          <h2 className="flex items-center justify-between border-b border-line-200 px-5 py-3 text-[14px] font-bold text-ink-900">
+            آخرین رسانه‌ها
+            <Link href="/admin/media" className="text-[11px] font-normal text-accent">
+              کتابخانه
             </Link>
-          </div>
-          {recentApplications.length === 0 ? (
-            <p className="text-sm text-ink-500">درخواستی ثبت نشده است.</p>
+          </h2>
+          {recentMedia.length === 0 ? (
+            <p className="px-5 py-8 text-center text-[12.5px] text-ink-500">رسانه‌ای بارگذاری نشده است.</p>
           ) : (
-            <ul className="divide-y divide-line-200">
-              {recentApplications.map((a) => (
-                <li key={a.id} className="flex items-center justify-between gap-3 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-ink-900">{a.name}</p>
-                    <p className="truncate text-xs text-ink-500">{a.position}</p>
-                  </div>
-                  <time className="shrink-0 text-[11px] text-ink-500">
-                    {formatJalaliLong(a.createdAt)}
-                  </time>
-                </li>
+            <div className="grid grid-cols-4 gap-2 p-4">
+              {recentMedia.map((asset) => (
+                <Link
+                  key={asset.id}
+                  href="/admin/media"
+                  className="relative aspect-square overflow-hidden rounded border border-line-200 bg-surface-100"
+                  title={asset.title || asset.filename}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={asset.path} alt={asset.alt || ""} className="h-full w-full object-cover" />
+                </Link>
               ))}
-            </ul>
+            </div>
           )}
-          <div className="mt-4 flex flex-wrap gap-4 border-t border-line-200 pt-4 text-[11px] text-ink-500">
-            <span className="inline-flex items-center gap-1.5">
-              <Inbox className="h-3.5 w-3.5" aria-hidden />
-              {toPersianDigits(unreadMessages)} پیام خوانده‌نشده
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Mail className="h-3.5 w-3.5" aria-hidden />
-              {toPersianDigits(subscribers)} عضو خبرنامه
-            </span>
-          </div>
         </section>
       </div>
     </div>
   );
-}
-
-/** Small inline icon so the stats list stays a single array. */
-function FileIcon({ className }: { className?: string }) {
-  return <PenLine className={className} aria-hidden />;
 }

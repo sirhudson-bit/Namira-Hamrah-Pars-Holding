@@ -3,68 +3,59 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
-import { ArrowLeft, ArrowUpRight, Menu, Phone, X } from "lucide-react";
+import { motion, useMotionValueEvent, useScroll } from "framer-motion";
+import { ArrowLeft, Phone } from "lucide-react";
 import type { NavItem } from "@/lib/site";
 import { toLatinDigits } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/site/logo";
-import { EASE } from "@/components/motion/reveal";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { MenuOverlay } from "@/components/site/menu-overlay";
+import { EASE } from "@/components/motion/reveal";
 import type { HeaderSettings } from "@/server/settings";
 
+/**
+ * Site header.
+ *
+ * The bar stays deliberately quiet: wordmark, the five most-used sections and
+ * one unmistakable entry into the full-screen index. Everything else — every
+ * section and its children, plus contact details — lives in the index, which is
+ * the navigation model of this design rather than a fallback menu.
+ */
 export function Header({ settings, nav }: { settings: HeaderSettings; nav: NavItem[] }) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [openSection, setOpenSection] = useState<string | null>(null);
-  /** Which desktop dropdown is open — hover/focus open it, a click closes it. */
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [indexOpen, setIndexOpen] = useState(false);
   const [compact, setCompact] = useState(false);
   const { scrollY } = useScroll();
 
-  useMotionValueEvent(scrollY, "change", (v) => setCompact(v > 14));
+  useMotionValueEvent(scrollY, "change", (value) => setCompact(value > 12));
 
+  // A route change always ends with the index closed, including back/forward.
   useEffect(() => {
-    setMobileOpen(false);
-    setOpenSection(null);
-    setOpenMenu(null);
+    setIndexOpen(false);
   }, [pathname]);
-
-  useEffect(() => {
-    if (!openMenu) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpenMenu(null);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [openMenu]);
-
-  useEffect(() => {
-    document.documentElement.style.overflow = mobileOpen ? "hidden" : "";
-    return () => {
-      document.documentElement.style.overflow = "";
-    };
-  }, [mobileOpen]);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
   // Admin-adjustable; clamped so a typo cannot break the bar's height.
   const logoSize = Math.min(96, Math.max(24, Number(settings.logo_height) || 44));
+  const primary = nav.slice(1, 6);
 
   return (
     <header className="sticky top-0 z-50">
-      {/* Utility strip */}
+      {/* Utility strip — hours on one side, direct contact on the other. */}
       <div
         className={cn(
-          "hidden border-b transition-colors duration-300 lg:block",
-          compact
-            ? "border-transparent bg-surface-50/80 backdrop-blur-xl"
-            : "border-line-200 bg-transparent",
+          "hidden overflow-hidden border-b transition-all duration-300 lg:block",
+          compact ? "max-h-0 border-transparent opacity-0" : "max-h-9 border-line-200 opacity-100",
         )}
       >
-        <div className="container flex h-9 items-center justify-between text-[11px] text-ink-500">
-          <span>{settings.hours}</span>
+        <div className="container flex h-9 items-center justify-between text-[10.5px] tracking-wide text-ink-500">
+          <span className="inline-flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-500" aria-hidden />
+            {settings.hours}
+          </span>
           <a
             href={`tel:${toLatinDigits(settings.phone)}`}
             className="inline-flex items-center gap-1.5 transition-colors hover:text-accent"
@@ -75,273 +66,86 @@ export function Header({ settings, nav }: { settings: HeaderSettings; nav: NavIt
         </div>
       </div>
 
-      {/* Main bar — transparent over the hero, glass once scrolled */}
       <div
         className={cn(
           "border-b transition-all duration-300 ease-smooth",
           compact
-            ? "border-line-200 bg-surface-50/80 backdrop-blur-xl"
+            ? "border-line-200 bg-surface-50/85 shadow-soft backdrop-blur-xl"
             : "border-transparent bg-transparent",
         )}
       >
-        <div className="container flex h-20 items-center justify-between gap-4">
+        <div className="container flex h-[72px] items-center justify-between gap-4">
           <Link href="/" aria-label={settings.site_name} className="shrink-0">
             <Logo src={settings.logo_path || undefined} size={logoSize} />
           </Link>
 
           <nav aria-label="ناوبری اصلی" className="hidden items-center gap-0.5 xl:flex">
-            {nav.map((item) => {
+            {primary.map((item) => {
               const active = isActive(item.href);
-              if (!item.children) {
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "relative whitespace-nowrap rounded-full px-2.5 py-2 text-[12.5px] font-medium transition-colors duration-200",
-                      active ? "text-accent" : "text-ink-700 hover:text-accent",
-                    )}
-                  >
-                    {item.shortLabel ?? item.label}
-                    {active ? (
-                      <motion.span
-                        layoutId="nav-active"
-                        className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-brand-400"
-                        transition={{ duration: 0.3, ease: EASE }}
-                      />
-                    ) : null}
-                  </Link>
-                );
-              }
               return (
-                <div
-                  key={item.label}
-                  className="relative"
-                  onMouseEnter={() => setOpenMenu(item.label)}
-                  onMouseLeave={() =>
-                    setOpenMenu((current) => (current === item.label ? null : current))
-                  }
-                  onFocus={() => setOpenMenu(item.label)}
-                  onBlur={(event) => {
-                    // Keep it open while focus moves between the trigger and the
-                    // links inside the panel; close as soon as focus leaves.
-                    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-                      setOpenMenu((current) => (current === item.label ? null : current));
-                    }
-                  }}
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "relative whitespace-nowrap rounded-full px-3 py-2 text-[12.5px] font-medium transition-colors duration-200",
+                    active ? "text-accent" : "text-ink-700 hover:text-accent",
+                  )}
                 >
-                  <Link
-                    href={item.href}
-                    aria-haspopup="true"
-                    aria-expanded={openMenu === item.label}
-                    onClick={() => setOpenMenu(null)}
-                    className={cn(
-                      "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-2 text-[12.5px] font-medium transition-colors duration-200",
-                      active ? "text-accent" : "text-ink-700 hover:text-accent",
-                    )}
-                  >
-                    {item.shortLabel ?? item.label}
-                    <svg
-                      viewBox="0 0 24 24"
-                      className={cn(
-                        "h-3 w-3 transition-transform duration-300",
-                        openMenu === item.label && "rotate-180",
-                      )}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden
-                    >
-                      <path d="m6 9 6 6 6-6" />
-                    </svg>
-                  </Link>
-                  {/*
-                    State driven, not `group-hover`: a CSS-hover panel stays
-                    visible after a click because the clicked link keeps focus
-                    (and its `:hover`), which is exactly the leak that made the
-                    submenu hang around until you clicked somewhere else.
-                  */}
-                  <div
-                    className={cn(
-                      "absolute right-0 top-full z-50 w-72 pt-3 transition-all duration-300 ease-smooth",
-                      openMenu === item.label
-                        ? "visible translate-y-0 opacity-100"
-                        : "invisible translate-y-2 opacity-0",
-                    )}
-                  >
-                    <div className="overflow-hidden rounded-2xl border border-line-200 bg-surface/95 p-2 shadow-lift backdrop-blur-xl">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          onClick={() => setOpenMenu(null)}
-                          className="block rounded-xl px-3 py-2.5 transition-colors duration-200 hover:bg-surface-100"
-                        >
-                          <span className="block text-[13px] font-medium text-ink-900">
-                            {child.label}
-                          </span>
-                          {child.description ? (
-                            <span className="mt-0.5 block text-[11px] text-ink-500">
-                              {child.description}
-                            </span>
-                          ) : null}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                  {item.shortLabel ?? item.label}
+                  {active ? (
+                    <motion.span
+                      layoutId="nav-active"
+                      className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-brand-400"
+                      transition={{ duration: 0.3, ease: EASE }}
+                    />
+                  ) : null}
+                </Link>
               );
             })}
           </nav>
 
           <div className="flex items-center gap-2">
-            <ThemeToggle className="hidden lg:inline-flex" />
+            <ThemeToggle className="hidden md:inline-flex" />
             <Link
               href="/contact"
-              className="group hidden items-center gap-1.5 rounded-full bg-brand-700 px-4 py-2.5 text-[13px] font-medium text-white transition-all duration-200 hover:bg-brand-800 hover:shadow-glow lg:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full bg-brand-700 px-4 py-2.5 text-[12.5px] font-medium text-white transition-all duration-200 hover:bg-brand-800 hover:shadow-glow sm:inline-flex"
             >
               تماس با ما
-              <ArrowLeft
-                className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-x-0.5"
-                aria-hidden
-              />
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
             </Link>
+
+            {/* The index trigger: a dot lattice that mirrors the site's grid. */}
             <button
               type="button"
-              onClick={() => setMobileOpen(true)}
-              aria-expanded={mobileOpen}
-              aria-controls="mobile-menu"
-              aria-label="باز کردن منو"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line-200 text-ink-900 transition-colors hover:bg-surface-100 xl:hidden"
+              onClick={() => setIndexOpen(true)}
+              aria-expanded={indexOpen}
+              aria-haspopup="dialog"
+              aria-label="فهرست سایت"
+              className="group inline-flex h-11 items-center gap-2.5 rounded-full border border-line-200 bg-surface/70 pe-3 ps-3 backdrop-blur transition-all duration-300 hover:border-brand-500/50 hover:bg-surface-100 sm:pe-4"
             >
-              <Menu className="h-5 w-5" aria-hidden />
+              <span
+                aria-hidden
+                className="grid h-4 w-4 grid-cols-2 grid-rows-2 gap-[3px] text-ink-700 transition-transform duration-500 ease-smooth group-hover:rotate-90"
+              >
+                {[0, 1, 2, 3].map((cell) => (
+                  <span key={cell} className="rounded-[1px] bg-current" />
+                ))}
+              </span>
+              <span className="hidden text-[12px] font-semibold text-ink-900 sm:inline">فهرست</span>
             </button>
           </div>
         </div>
-
-        {/* Accent hairline that appears once scrolled */}
-        <div
-          className={cn(
-            "h-px w-full bg-gradient-to-l from-transparent via-brand-500/50 to-transparent transition-opacity duration-300",
-            compact ? "opacity-100" : "opacity-0",
-          )}
-          aria-hidden
-        />
       </div>
 
-      <AnimatePresence>
-        {mobileOpen ? (
-          <motion.div
-            id="mobile-menu"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-[90] bg-surface-50 xl:hidden"
-          >
-            <div
-              className="pointer-events-none absolute inset-0 grid-lines opacity-[0.35]"
-              aria-hidden
-            />
-            <div className="relative flex h-20 items-center justify-between px-4">
-              <Logo src={settings.logo_path || undefined} size={logoSize} />
-              <button
-                type="button"
-                onClick={() => setMobileOpen(false)}
-                aria-label="بستن منو"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line-200"
-              >
-                <X className="h-5 w-5" aria-hidden />
-              </button>
-            </div>
-            <nav
-              aria-label="ناوبری موبایل"
-              className="relative h-[calc(100%-5rem)] overflow-y-auto px-4 pb-8"
-            >
-              {nav.map((item, i) => (
-                <motion.div
-                  key={item.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.03 * i, duration: 0.35, ease: EASE }}
-                  className="border-b border-line-200 last:border-b-0"
-                >
-                  {item.children ? (
-                    <>
-                      <div className="flex items-center">
-                        <Link
-                          href={item.href}
-                          className="flex-1 py-4 text-[15px] font-semibold text-ink-900"
-                        >
-                          {item.label}
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setOpenSection(openSection === item.label ? null : item.label)
-                          }
-                          aria-expanded={openSection === item.label}
-                          aria-label={`زیرمنوی ${item.label}`}
-                          className="inline-flex h-11 w-11 items-center justify-center rounded-full"
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            className={cn(
-                              "h-4 w-4 text-ink-500 transition-transform duration-300",
-                              openSection === item.label && "rotate-180",
-                            )}
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            aria-hidden
-                          >
-                            <path d="m6 9 6 6 6-6" />
-                          </svg>
-                        </button>
-                      </div>
-                      <AnimatePresence initial={false}>
-                        {openSection === item.label ? (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.3, ease: EASE }}
-                            className="overflow-hidden"
-                          >
-                            <div className="pb-3 pr-3">
-                              {item.children.map((child) => (
-                                <Link
-                                  key={child.href}
-                                  href={child.href}
-                                  className="block rounded-xl px-3 py-3 text-sm text-ink-700 hover:bg-surface-100"
-                                >
-                                  {child.label}
-                                </Link>
-                              ))}
-                            </div>
-                          </motion.div>
-                        ) : null}
-                      </AnimatePresence>
-                    </>
-                  ) : (
-                    <Link
-                      href={item.href}
-                      className="flex items-center justify-between py-4 text-[15px] font-semibold text-ink-900"
-                    >
-                      {item.label}
-                      <ArrowUpRight className="h-4 w-4 text-ink-500" aria-hidden />
-                    </Link>
-                  )}
-                </motion.div>
-              ))}
-              <ThemeToggle withLabel className="mt-6" />
-              <Link href="/contact" className="btn-primary mt-3 w-full">
-                تماس با ما
-              </Link>
-            </nav>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      <MenuOverlay
+        open={indexOpen}
+        onClose={() => setIndexOpen(false)}
+        nav={nav}
+        siteName={settings.site_name}
+        phone={settings.phone}
+        email={settings.email}
+        hours={settings.hours}
+      />
     </header>
   );
 }

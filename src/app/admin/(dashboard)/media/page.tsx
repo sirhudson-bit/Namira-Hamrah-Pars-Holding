@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ExternalLink, ImageIcon } from "lucide-react";
+import type { MediaAsset } from "@prisma/client";
+import { ArrowRight, ExternalLink, Plus } from "lucide-react";
 import { prisma } from "@/server/db";
 import { deleteMedia, saveMediaAsset } from "@/server/admin-actions";
-import { DeleteButton } from "@/components/admin/delete-button";
 import { MediaUploadForm } from "@/components/admin/media-upload-form";
 import { RecordForm, type FieldSpec } from "@/components/admin/record-form";
-import { AdminPageHeader } from "@/components/admin/page-header";
+import { ScreenHeader, SearchBox } from "@/components/admin/wp/screen";
+import { InlineDelete } from "@/components/admin/wp/inline-delete";
 import { toPersianDigits } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -18,11 +19,7 @@ function formatSize(bytes: number): string {
   return `${toPersianDigits((bytes / (1024 * 1024)).toFixed(1))} مگابایت`;
 }
 
-function assetFields(asset: {
-  alt: string;
-  title: string;
-  inGallery: boolean;
-}): FieldSpec[] {
+function assetFields(asset: MediaAsset): FieldSpec[] {
   return [
     {
       type: "text",
@@ -54,89 +51,166 @@ function assetFields(asset: {
   ];
 }
 
-export default async function AdminMediaPage() {
-  const assets = await prisma.mediaAsset.findMany({ orderBy: { createdAt: "desc" } });
+export default async function AdminMediaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ edit?: string; new?: string; s?: string }>;
+}) {
+  const params = await searchParams;
+  const editId = params.edit;
+  const isNew = params.new === "1";
+  const search = (params.s ?? "").trim();
+
+  const assets = await prisma.mediaAsset.findMany({
+    where: search
+      ? {
+          OR: [
+            { title: { contains: search } },
+            { filename: { contains: search } },
+            { alt: { contains: search } },
+          ],
+        }
+      : undefined,
+    orderBy: { createdAt: "desc" },
+  });
+
+  const editing = editId ? assets.find((asset) => asset.id === editId) : undefined;
+  const listHref = "/admin/media";
 
   return (
     <div>
-      <AdminPageHeader
-        title="رسانه"
+      <ScreenHeader
+        title="کتابخانه رسانه"
         description="بارگذاری، ویرایش و مدیریت تصاویر سایت. تصاویر دارای «نمایش در گالری» در صفحه عمومی رسانه دیده می‌شوند."
+        breadcrumb={[{ label: "رسانه" }]}
+        action={
+          isNew || editing ? (
+            <Link href={listHref} className="btn-secondary">
+              <ArrowRight className="h-4 w-4" aria-hidden />
+              بازگشت به کتابخانه
+            </Link>
+          ) : (
+            <Link href={`${listHref}?new=1`} className="btn-primary">
+              <Plus className="h-4 w-4" aria-hidden />
+              افزودن رسانه
+            </Link>
+          )
+        }
       />
 
-      <section className="card mb-6 p-6">
-        <h2 className="heading-3 mb-5">بارگذاری تصویر جدید</h2>
-        <MediaUploadForm />
-      </section>
+      {isNew ? (
+        <section className="card mb-5 p-5">
+          <h2 className="mb-1 text-[14px] font-bold text-ink-900">بارگذاری تصویر جدید</h2>
+          <p className="mb-4 text-[12px] text-ink-500">
+            تصاویر رستری خودکار به WebP تبدیل می‌شوند. پس از بارگذاری، تصویر بلافاصله در
+            انتخاب‌گر تصویر همه فرم‌ها قابل استفاده است.
+          </p>
+          <MediaUploadForm />
+        </section>
+      ) : null}
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-ink-500">
-          {toPersianDigits(assets.length)} فایل در کتابخانه
+      {editing ? (
+        <section className="mb-5 grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <div className="card p-4">
+            <div className="flex h-44 items-center justify-center overflow-hidden rounded border border-line-200 bg-surface-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={editing.path}
+                alt={editing.alt || editing.title}
+                className="max-h-full max-w-full object-contain"
+              />
+            </div>
+            <dl className="mt-3 space-y-1 text-[11.5px]">
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-500">فایل</dt>
+                <dd className="truncate text-ink-900" dir="ltr">
+                  {editing.filename}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-500">حجم</dt>
+                <dd className="text-ink-900">{formatSize(editing.size)}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-500">نوع</dt>
+                <dd className="text-ink-900">{editing.mime.replace("image/", "").toUpperCase()}</dd>
+              </div>
+            </dl>
+            <div className="mt-3 space-y-1.5 border-t border-line-200 pt-3 text-[11.5px]">
+              <Link href={editing.path} target="_blank" className="block text-accent hover:underline">
+                مشاهده فایل کامل ↗
+              </Link>
+              <InlineDelete
+                action={deleteMedia}
+                id={editing.id}
+                label="حذف این فایل"
+                confirmText="این فایل حذف شود؟ اگر در محتوایی استفاده شده باشد، آن تصویر دیگر نمایش داده نمی‌شود."
+              />
+            </div>
+          </div>
+
+          <div className="card p-5">
+            <h2 className="mb-4 text-[14px] font-bold text-ink-900">جزئیات تصویر</h2>
+            <RecordForm
+              action={saveMediaAsset}
+              hidden={{ id: editing.id }}
+              fields={assetFields(editing)}
+              columns={1}
+              submitLabel="ذخیره تغییرات"
+            />
+          </div>
+        </section>
+      ) : null}
+
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-[12px] text-ink-500">
+          {toPersianDigits(assets.length)} فایل
+          {search ? " (نتیجه جستجو)" : ""}
         </p>
-        <Link href="/media#gallery" target="_blank" className="btn-ghost px-2 py-1 text-xs">
-          <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-          مشاهده گالری عمومی
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <SearchBox action={listHref} value={search} placeholder="عنوان یا نام فایل…" />
+          <Link href="/media#gallery" target="_blank" className="text-[11.5px] text-accent hover:underline">
+            <ExternalLink className="me-1 inline h-3 w-3" aria-hidden />
+            گالری عمومی
+          </Link>
+        </div>
       </div>
 
       {assets.length === 0 ? (
-        <div className="card p-12 text-center text-sm text-ink-500">
-          هنوز فایلی بارگذاری نشده است. پس از بارگذاری، تصویر بلافاصله در گالری صفحه «رسانه» و در
-          انتخاب‌گر تصویر همه فرم‌ها قابل استفاده است.
+        <div className="card px-4 py-12 text-center text-[13px] text-ink-500">
+          هنوز فایلی بارگذاری نشده است.
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {assets.map((a) => (
-            <article key={a.id} className="card overflow-hidden">
-              <a
-                href={a.path}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="relative block h-44 bg-surface-50"
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {assets.map((asset) => (
+            <article key={asset.id} className="card group overflow-hidden">
+              <Link
+                href={`${listHref}?edit=${asset.id}`}
+                className="relative block aspect-square bg-surface-100"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={a.path}
-                  alt={a.alt || a.title || a.filename}
-                  className="h-full w-full object-contain p-2"
+                  src={asset.path}
+                  alt={asset.alt || asset.title || asset.filename}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                 />
-                {a.inGallery ? (
-                  <span className="absolute right-3 top-3 badge bg-brand-700/80 text-white">
-                    در گالری
+                {asset.inGallery ? (
+                  <span className="absolute start-1.5 top-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[9.5px] text-white">
+                    گالری
                   </span>
                 ) : null}
-              </a>
-
-              <div className="p-4">
-                <p className="truncate text-sm font-medium text-ink-900">
-                  {a.title || a.filename}
+                <span className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/5" />
+              </Link>
+              <div className="p-2">
+                <Link
+                  href={`${listHref}?edit=${asset.id}`}
+                  className="block truncate text-[11.5px] font-medium text-ink-900 hover:text-accent"
+                >
+                  {asset.title || asset.filename}
+                </Link>
+                <p className="mt-0.5 truncate text-[10px] text-ink-400" dir="ltr">
+                  {formatSize(asset.size)}
                 </p>
-                <p className="mt-1 truncate text-[11px] text-ink-500" dir="ltr">
-                  {a.filename}
-                </p>
-                <p className="mt-1 flex items-center gap-2 text-[11px] text-ink-500">
-                  <ImageIcon className="h-3.5 w-3.5" aria-hidden />
-                  {formatSize(a.size)} · {a.mime.replace("image/", "").toUpperCase()}
-                </p>
-
-                <details className="mt-3 border-t border-line-200 pt-3">
-                  <summary className="cursor-pointer text-xs font-bold text-accent">
-                    ویرایش تصویر و جایگزینی فایل
-                  </summary>
-                  <div className="mt-4">
-                    <RecordForm
-                      action={saveMediaAsset}
-                      hidden={{ id: a.id }}
-                      fields={assetFields(a)}
-                      columns={1}
-                      submitLabel="ذخیره تغییرات"
-                    />
-                  </div>
-                </details>
-
-                <div className="mt-3 border-t border-line-200 pt-3">
-                  <DeleteButton action={deleteMedia} id={a.id} label="حذف فایل" />
-                </div>
               </div>
             </article>
           ))}

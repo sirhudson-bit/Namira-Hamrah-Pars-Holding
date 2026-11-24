@@ -72,6 +72,7 @@ export default async function SiteLayout({
           logo_height: settings.logo_height,
           hours: settings.hours,
           phone: settings.phone,
+          email: settings.email,
         }}
       />
       <main id="main" className="flex-1">

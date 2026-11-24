@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ExternalLink, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, ExternalLink, Plus } from "lucide-react";
 import { getMenusForAdmin, type MenuWithItems } from "@/server/menus";
 import {
   createMenu,
@@ -11,7 +11,8 @@ import {
   saveMenuItem,
 } from "@/server/admin-actions";
 import { RecordForm, type FieldSpec } from "@/components/admin/record-form";
-import { AdminPageHeader } from "@/components/admin/page-header";
+import { ScreenHeader } from "@/components/admin/wp/screen";
+import { InlineDelete } from "@/components/admin/wp/inline-delete";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,10 @@ function itemFields(menu: MenuWithItems, item?: MenuWithItems["items"][number]):
       name: "parentId",
       label: "زیرمنوی",
       defaultValue: item?.parentId ?? "",
-      options: [{ value: "", label: "بدون والد (سطح اول)" }, ...parents.map((row) => ({ value: row.id, label: row.label }))],
+      options: [
+        { value: "", label: "بدون والد (سطح اول)" },
+        ...parents.map((row) => ({ value: row.id, label: row.label })),
+      ],
     },
     {
       type: "text",
@@ -47,14 +51,26 @@ function itemFields(menu: MenuWithItems, item?: MenuWithItems["items"][number]):
     },
     { type: "number", name: "sortOrder", label: "ترتیب", defaultValue: item?.sortOrder ?? 0 },
     { type: "checkbox", name: "visible", label: "نمایش در سایت", defaultChecked: item?.visible ?? true },
-    { type: "checkbox", name: "openInNewTab", label: "باز شدن در تب جدید", defaultChecked: item?.openInNewTab ?? false },
+    {
+      type: "checkbox",
+      name: "openInNewTab",
+      label: "باز شدن در تب جدید",
+      defaultChecked: item?.openInNewTab ?? false,
+    },
   ];
 }
 
-export default async function AdminMenusPage({ searchParams }: { searchParams: Promise<{ menu?: string }> }) {
-  const { menu: menuKey } = await searchParams;
+export default async function AdminMenusPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ menu?: string; item?: string; new?: string }>;
+}) {
+  const params = await searchParams;
   const menus = await getMenusForAdmin();
-  const active = menus.find((menu) => menu.key === menuKey) ?? menus[0];
+  const active = menus.find((menu) => menu.key === params.menu) ?? menus[0];
+  const editing = params.item ? active?.items.find((item) => item.id === params.item) : undefined;
+  const showNewItem = params.new === "1";
+
   const orderedItems = active
     ? active.items
         .filter((item) => !item.parentId)
@@ -63,166 +79,217 @@ export default async function AdminMenusPage({ searchParams }: { searchParams: P
 
   return (
     <div>
-      <AdminPageHeader
+      <ScreenHeader
         title="منوها"
-        description="منوی اصلی سایت و ستون‌های فوتر را مانند وردپرس بسازید و ویرایش کنید. تغییرات بلافاصله در سایت اعمال می‌شود."
+        description="منوی اصلی سایت و ستون‌های فوتر. تغییرات بلافاصله در سایت اعمال می‌شود."
+        breadcrumb={[{ label: "نمایش" }, { label: "منوها" }]}
+        action={
+          <>
+            <Link href="/" target="_blank" className="btn-secondary">
+              <ExternalLink className="h-4 w-4" aria-hidden />
+              مشاهده سایت
+            </Link>
+            {active ? (
+              <Link href={`/admin/menus?menu=${active.key}&new=1`} className="btn-primary">
+                <Plus className="h-4 w-4" aria-hidden />
+                افزودن آیتم
+              </Link>
+            ) : null}
+          </>
+        }
       />
 
-      <details className="card mb-6 p-6">
-        <summary className="flex cursor-pointer items-center gap-2 text-sm font-bold text-accent">
-          <Plus className="h-4 w-4" aria-hidden /> ساخت منوی جدید
-        </summary>
-        <div className="mt-5 border-t border-line-200 pt-5">
-          <RecordForm
-            action={createMenu}
-            submitLabel="ساخت منو"
-            fields={[
-              { type: "text", name: "title", label: "عنوان منو", required: true, placeholder: "مثلاً لینک‌های مفید" },
-              {
-                type: "text",
-                name: "key",
-                label: "شناسه (key)",
-                dir: "ltr",
-                required: true,
-                placeholder: "footer-helpful",
-                hint: "هر منویی به‌جز header در ستون‌های فوتر نمایش داده می‌شود.",
-              },
-              { type: "number", name: "sortOrder", label: "ترتیب نمایش", defaultValue: 0 },
-            ]}
-          />
-        </div>
-      </details>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {menus.map((menu) => (
+          <Link
+            key={menu.id}
+            href={`/admin/menus?menu=${menu.key}`}
+            aria-current={menu.key === active?.key ? "page" : undefined}
+            className={cn(
+              "rounded-[3px] border px-3 py-1.5 text-[12px] transition-colors",
+              menu.key === active?.key
+                ? "border-brand-700 bg-brand-700 text-white"
+                : "border-line-200 bg-surface text-ink-700 hover:border-accent hover:text-accent",
+            )}
+          >
+            {menu.title}
+            <span className="ms-1 text-[10px] opacity-70" dir="ltr">
+              ({menu.key})
+            </span>
+          </Link>
+        ))}
+      </div>
 
       {menus.length === 0 ? (
-        <div className="card p-8 text-center text-sm text-ink-500">منویی وجود ندارد.</div>
-      ) : (
-        <>
-          <nav aria-label="انتخاب منو" className="mb-6 flex flex-wrap gap-2">
-            {menus.map((menu) => (
-              <Link
-                key={menu.id}
-                href={`/admin/menus?menu=${menu.key}`}
-                aria-current={menu.key === active?.key ? "page" : undefined}
-                className={cn(
-                  "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
-                  menu.key === active?.key
-                    ? "border-brand-500 bg-brand-700 text-white"
-                    : "border-line-200 text-ink-700 hover:border-brand-500/60 hover:text-accent",
-                )}
-              >
-                {menu.title}
-                <span className="mr-1 text-[10px] opacity-70" dir="ltr">({menu.key})</span>
-              </Link>
-            ))}
-          </nav>
+        <div className="card px-4 py-10 text-center text-[13px] text-ink-500">منویی وجود ندارد.</div>
+      ) : null}
 
-          {active ? (
-            <div className="grid gap-6 xl:grid-cols-[1fr_1.6fr]">
-              <div className="space-y-6">
-                <section className="card p-6">
-                  <h2 className="mb-4 text-sm font-bold text-ink-900">تنظیمات منو</h2>
-                  <RecordForm
-                    action={saveMenu}
-                    hidden={{ id: active.id }}
-                    columns={1}
-                    submitLabel="ذخیره تنظیمات"
-                    fields={[
-                      { type: "text", name: "title", label: "عنوان منو", required: true, defaultValue: active.title },
-                      { type: "number", name: "sortOrder", label: "ترتیب نمایش", defaultValue: active.sortOrder },
-                    ]}
-                  />
-                  {active.key !== "header" ? (
-                    <form action={deleteMenu} className="mt-4 border-t border-line-200 pt-4">
-                      <input type="hidden" name="id" value={active.id} />
-                      <button type="submit" className="btn-ghost px-2 py-1 text-xs text-red-400">
-                        <Trash2 className="h-3.5 w-3.5" aria-hidden /> حذف این منو
-                      </button>
-                    </form>
-                  ) : null}
-                </section>
-
-                <section className="card p-6">
-                  <h2 className="mb-2 flex items-center gap-2 text-sm font-bold text-ink-900">
-                    <Plus className="h-4 w-4 text-accent" aria-hidden /> افزودن آیتم
+      {active ? (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+          <div className="min-w-0 space-y-5">
+            {(editing || showNewItem) && (
+              <section className="card">
+                <div className="flex items-center justify-between gap-3 border-b border-line-200 px-4 py-2.5">
+                  <h2 className="text-[13px] font-bold text-ink-900">
+                    {editing ? `ویرایش «${editing.label}»` : "آیتم جدید"}
                   </h2>
-                  <p className="mb-4 text-xs text-ink-500">
-                    برای ساخت زیرمنو، ابتدا آیتم سطح اول را بسازید و سپس در فیلد «زیرمنوی» آن را انتخاب کنید.
-                  </p>
-                  <RecordForm
-                    action={saveMenuItem}
-                    hidden={{ menuId: active.id }}
-                    columns={1}
-                    submitLabel="افزودن به منو"
-                    fields={itemFields(active)}
-                  />
-                </section>
-              </div>
-
-              <section className="card p-6">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="text-sm font-bold text-ink-900">آیتم‌های منو ({active.items.length})</h2>
-                  <Link href="/" target="_blank" className="btn-ghost px-2 py-1 text-xs">
-                    <ExternalLink className="h-3.5 w-3.5" aria-hidden /> مشاهده سایت
+                  <Link href={`/admin/menus?menu=${active.key}`} className="text-[11.5px] text-accent">
+                    بستن
                   </Link>
                 </div>
-                {active.items.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-ink-500">این منو هنوز آیتمی ندارد.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {orderedItems.map((item) => (
-                      <details key={item.id} className="rounded-card border border-line-200 bg-surface-50 p-4">
-                        <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2">
-                          <span className={cn("text-sm font-medium", !item.visible && "text-ink-500 line-through")}>
-                            {item.parentId ? "↳ " : ""}
-                            {item.label}
-                          </span>
-                          <span className="text-[11px] text-ink-500" dir="ltr">{item.href}</span>
-                        </summary>
-                        <div className="mt-4 border-t border-line-200 pt-4">
-                          <RecordForm
-                            action={saveMenuItem}
-                            hidden={{ id: item.id, menuId: active.id }}
-                            columns={1}
-                            submitLabel="ذخیره آیتم"
-                            fields={itemFields(active, item)}
-                          />
-                          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line-200 pt-4">
-                            <form action={moveMenuItem}>
-                              <input type="hidden" name="id" value={item.id} />
-                              <input type="hidden" name="direction" value="up" />
-                              <button type="submit" className="btn-ghost px-2 py-1 text-xs" aria-label={`بالا بردن ${item.label}`}>
-                                <ArrowUp className="h-3.5 w-3.5" aria-hidden /> بالا
-                              </button>
-                            </form>
-                            <form action={moveMenuItem}>
-                              <input type="hidden" name="id" value={item.id} />
-                              <input type="hidden" name="direction" value="down" />
-                              <button type="submit" className="btn-ghost px-2 py-1 text-xs" aria-label={`پایین بردن ${item.label}`}>
-                                <ArrowDown className="h-3.5 w-3.5" aria-hidden /> پایین
-                              </button>
-                            </form>
-                            <form action={deleteMenuItem}>
-                              <input type="hidden" name="id" value={item.id} />
-                              <button type="submit" className="btn-ghost px-2 py-1 text-xs text-red-400">
-                                <Trash2 className="h-3.5 w-3.5" aria-hidden /> حذف
-                              </button>
-                            </form>
-                          </div>
-                        </div>
-                      </details>
-                    ))}
-                  </div>
-                )}
-                {active.items.some((item) => !item.parentId) ? (
-                  <p className="mt-4 text-[11px] text-ink-500">
-                    زیرمنوهای هر آیتم به‌صورت تورفته (↳) نمایش داده می‌شوند؛ ترتیب آن‌ها با دکمه‌های بالا/پایین در همان سطح عوض می‌شود.
-                  </p>
-                ) : null}
+                <div className="p-4">
+                  <RecordForm
+                    action={saveMenuItem}
+                    hidden={{ id: editing?.id ?? "", menuId: active.id }}
+                    columns={2}
+                    submitLabel={editing ? "ذخیره آیتم" : "افزودن به منو"}
+                    fields={itemFields(active, editing)}
+                  />
+                </div>
               </section>
-            </div>
-          ) : null}
-        </>
-      )}
+            )}
+
+            <section className="card overflow-hidden">
+              <h2 className="border-b border-line-200 px-4 py-2.5 text-[13px] font-bold text-ink-900">
+                ساختار منو ({active.items.length.toLocaleString("fa-IR")})
+              </h2>
+              {orderedItems.length === 0 ? (
+                <p className="px-4 py-8 text-center text-[12.5px] text-ink-500">
+                  این منو هنوز آیتمی ندارد. با «افزودن آیتم» شروع کنید.
+                </p>
+              ) : (
+                <ul className="divide-y divide-line-200">
+                  {orderedItems.map((item, index) => (
+                    <li
+                      key={item.id}
+                      className={cn(
+                        "group flex flex-wrap items-center gap-3 px-4 py-2.5",
+                        !item.visible && "opacity-60",
+                      )}
+                    >
+                      <span className="w-5 text-[10px] tabular-nums text-ink-400">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div className={cn("min-w-0 flex-1", item.parentId && "ps-5")}>
+                        <Link
+                          href={`/admin/menus?menu=${active.key}&item=${item.id}`}
+                          className="text-[12.5px] font-semibold text-accent hover:underline"
+                        >
+                          {item.parentId ? "↳ " : ""}
+                          {item.label}
+                        </Link>
+                        <span className="ms-2 text-[10.5px] text-ink-500" dir="ltr">
+                          {item.href}
+                        </span>
+                        <div className="wp-row-actions">
+                          <Link href={`/admin/menus?menu=${active.key}&item=${item.id}`} className="wp-action">
+                            ویرایش
+                          </Link>
+                          <form action={moveMenuItem} className="inline">
+                            <input type="hidden" name="id" value={item.id} />
+                            <input type="hidden" name="direction" value="up" />
+                            <button type="submit" className="wp-action" aria-label={`بالا بردن ${item.label}`}>
+                              <ArrowUp className="inline h-3 w-3" aria-hidden /> بالا
+                            </button>
+                          </form>
+                          <form action={moveMenuItem} className="inline">
+                            <input type="hidden" name="id" value={item.id} />
+                            <input type="hidden" name="direction" value="down" />
+                            <button type="submit" className="wp-action" aria-label={`پایین بردن ${item.label}`}>
+                              <ArrowDown className="inline h-3 w-3" aria-hidden /> پایین
+                            </button>
+                          </form>
+                          <InlineDelete action={deleteMenuItem} id={item.id} />
+                        </div>
+                      </div>
+                      <span
+                        className={cn(
+                          "rounded px-1.5 py-0.5 text-[10px]",
+                          item.visible ? "bg-surface-200 text-ink-700" : "bg-[#fcf0f1] text-red-400",
+                        )}
+                      >
+                        {item.visible ? "نمایش" : "پنهان"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="border-t border-line-200 px-4 py-2.5 text-[10.5px] text-ink-500">
+                زیرمنوها با ↳ نمایش داده می‌شوند؛ ترتیب در هر سطح با «بالا/پایین» عوض می‌شود.
+              </p>
+            </section>
+          </div>
+
+          <aside className="space-y-4 lg:sticky lg:top-24">
+            <section className="card">
+              <h2 className="border-b border-line-200 px-4 py-2.5 text-[13px] font-bold text-ink-900">
+                تنظیمات منو
+              </h2>
+              <div className="p-4">
+                <RecordForm
+                  action={saveMenu}
+                  hidden={{ id: active.id }}
+                  columns={1}
+                  submitLabel="ذخیره"
+                  fields={[
+                    { type: "text", name: "title", label: "عنوان منو", required: true, defaultValue: active.title },
+                    { type: "number", name: "sortOrder", label: "ترتیب نمایش", defaultValue: active.sortOrder },
+                  ]}
+                />
+                {active.key !== "header" ? (
+                  <form action={deleteMenu} className="mt-3 border-t border-line-200 pt-3">
+                    <input type="hidden" name="id" value={active.id} />
+                    <button type="submit" className="wp-action wp-action-danger text-[11.5px]">
+                      حذف این منو
+                    </button>
+                  </form>
+                ) : null}
+              </div>
+            </section>
+
+            <section className="card">
+              <h2 className="border-b border-line-200 px-4 py-2.5 text-[13px] font-bold text-ink-900">
+                ساخت منوی جدید
+              </h2>
+              <div className="p-4">
+                <RecordForm
+                  action={createMenu}
+                  columns={1}
+                  submitLabel="ساخت منو"
+                  fields={[
+                    {
+                      type: "text",
+                      name: "title",
+                      label: "عنوان منو",
+                      required: true,
+                      placeholder: "مثلاً لینک‌های مفید",
+                    },
+                    {
+                      type: "text",
+                      name: "key",
+                      label: "شناسه (key)",
+                      dir: "ltr",
+                      required: true,
+                      placeholder: "footer-helpful",
+                      hint: "هر منویی به‌جز header در ستون‌های فوتر نمایش داده می‌شود.",
+                    },
+                    { type: "number", name: "sortOrder", label: "ترتیب", defaultValue: 0 },
+                  ]}
+                />
+                {showNewItem || editing ? null : (
+                  <Link
+                    href={`/admin/menus?menu=${active.key}&new=1`}
+                    className="mt-3 inline-flex items-center gap-1 text-[11.5px] text-accent"
+                  >
+                    <ArrowRight className="h-3 w-3" aria-hidden />
+                    افزودن آیتم به این منو
+                  </Link>
+                )}
+              </div>
+            </section>
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 }
