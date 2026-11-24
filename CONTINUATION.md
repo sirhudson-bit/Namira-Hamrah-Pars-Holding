@@ -25,9 +25,9 @@ Everything below was executed, not assumed.
 |---|---|
 | `npm run typecheck` | clean (0 errors) |
 | `npm run lint` | clean (0 errors, 0 warnings) |
-| `npm test` | **18 tests passing** (validation + Markdown) |
+| `npm test` | **29 tests passing** (validation + Markdown) |
 | `npm run build` | succeeds — 39 routes + middleware |
-| `npm run verify` | **17/17 end-to-end checks passing** against `next start` |
+| `npm run verify` | **33/33 end-to-end checks passing** against `next start` (after the UI rebuild) |
 | Public routes | all 31 checked return 200 (incl. `/icon.svg`) |
 | `/admin/*` anonymous | 307 → `/admin/login` |
 | `/api/admin/*` anonymous | 401 JSON |
